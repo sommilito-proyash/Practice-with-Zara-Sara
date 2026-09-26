@@ -1,0 +1,46 @@
+{% extends 'base.html' %}{% block title %}Quiz Management{% endblock %}{% block content %}
+<div class="wrap section">
+  <div class="adminhead"><div><h1>🎯 Quiz Management</h1><p>Class → Subject → Chapter অনুযায়ী Quiz তৈরি ও প্রকাশ করুন।</p></div><div class="actions"><a class="btn" href="{{url_for('admin')}}">← Dashboard</a><a class="btn" href="{{url_for('admin_questions')}}">Question Bank</a></div></div>
+
+  <div class="two admin-builder">
+    <div class="card">
+      <div class="section-title"><div><h2>{% if edit_quiz %}✏️ Quiz Edit{% else %}➕ নতুন Quiz{% endif %}</h2><p class="muted">প্রশ্ন একে একে নির্বাচন করতে হবে না। Class/Subject/Chapter অনুযায়ী Question Bank থেকে automatic Question Pool তৈরি হবে।</p></div></div>
+      <form method="post" action="{{url_for('admin_quizzes',edit=edit_quiz.id) if edit_quiz else url_for('admin_quizzes')}}" id="quizForm">
+        <label>Quiz Title<input name="title" value="{{edit_quiz.title if edit_quiz else ''}}" required></label>
+        <label>Description<textarea name="description" placeholder="Quiz-এর ছোট পরিচিতি">{{edit_quiz.description if edit_quiz else ''}}</textarea></label>
+        <div class="formgrid">
+          <label>Class<select name="class_id" id="quizClass"><option value="">সব শ্রেণি</option>{% for c in classes %}<option value="{{c.id}}" {% if edit_quiz and edit_quiz.class_id|string==c.id|string %}selected{% endif %}>{{c.name}}</option>{% endfor %}</select></label>
+          <label>Subject<select name="subject_id" id="quizSubject"><option value="">মিশ্র/সব বিষয়</option>{% for s in subjects %}<option value="{{s.id}}" {% if edit_quiz and edit_quiz.subject_id|string==s.id|string %}selected{% endif %}>{{s.icon}} {{s.name}}</option>{% endfor %}</select></label>
+          <label>Chapter<select name="chapter_id" id="quizChapter"><option value="">সব Chapter / সাধারণ Quiz</option>{% for ch in chapters %}<option value="{{ch.id}}" {% if edit_quiz and edit_quiz.chapter_id|string==ch.id|string %}selected{% endif %}>{{ch.title}}</option>{% endfor %}</select><small class="muted">Chapter না বাছলে ঐ Subject/Class-এর সব Active প্রশ্ন pool-এ যাবে।</small></label>
+          <label>Time Limit (minutes)<input type="number" name="time_limit" min="0" value="{{edit_quiz.time_limit if edit_quiz else 10}}"><small class="muted">0 দিলে timer বন্ধ থাকবে</small></label>
+          <label>Total Marks<input type="number" name="total_marks" min="0" value="{{edit_quiz.total_marks if edit_quiz else 0}}"><small class="muted">0 দিলে pool-এর Marks auto হবে; attempt-এর actual total নির্বাচিত প্রশ্নের Marks অনুযায়ী হবে।</small></label>
+          <label><strong>Default Question Count</strong><input type="number" name="question_count" min="1" max="1000" value="{{edit_quiz.question_count if edit_quiz else 20}}" required><small class="muted">প্রতি attempt-এ defaultভাবে কতটি প্রশ্ন আসবে</small></label>
+          <label><strong>Maximum Question Count</strong><input type="number" name="max_question_count" min="1" max="1000" value="{{edit_quiz.max_question_count if edit_quiz and edit_quiz.max_question_count else 50}}"><small class="muted">Student নিজে সংখ্যা বেছে নিতে পারলে এই সীমা কার্যকর হবে</small></label>
+        </div>
+        <label class="checkline"><input type="checkbox" name="student_can_choose_count" value="1" {% if edit_quiz and edit_quiz.student_can_choose_count %}checked{% endif %}> Student নিজে Question Count বেছে নিতে পারবে</label>
+        <label class="checkline"><input type="checkbox" name="randomize_questions" value="1" {% if not edit_quiz or edit_quiz.randomize_questions %}checked{% endif %}> প্রতিটি attempt-এ Random Question Set দিন</label>
+        <label class="checkline"><input type="checkbox" name="published" value="1" {% if edit_quiz and edit_quiz.published %}checked{% endif %}> এখনই Publish করুন</label>
+        <div class="auto-pool-preview notice"><b>⚡ Automatic Quiz:</b><p>Quiz তৈরি করলে নির্বাচিত Class/Subject/Chapter অনুযায়ী Question Bank-এর সব Active প্রশ্ন automatically pool-এ যুক্ত হবে। Student-এর প্রতিটি attempt-এ নির্ধারিত Question Count অনুযায়ী Random প্রশ্ন নেওয়া হবে; pool শেষ হলে প্রয়োজনমতো পুরোনো প্রশ্ন আবার আসতে পারবে।</p></div>
+        <div class="actions"><button class="btn primary">{% if edit_quiz %}Quiz আপডেট করুন{% else %}🚀 Quiz তৈরি করুন{% endif %}</button>{% if edit_quiz %}<a class="btn" href="{{url_for('admin_quizzes')}}">নতুন Quiz</a>{% endif %}</div>
+      </form>
+    </div>
+
+    <div class="card auto-pool-info">
+      <div class="section-title"><div><h2>📚 Automatic Question Pool</h2><p class="muted">এখানে প্রশ্ন manually select করার প্রয়োজন নেই।</p></div></div>
+      <div class="notice compact-notice"><b>যেভাবে কাজ করবে</b><p>1️⃣ Quiz Title লিখুন<br>2️⃣ Class নির্বাচন করুন<br>3️⃣ Subject নির্বাচন করুন<br>4️⃣ প্রয়োজন হলে Chapter নির্বাচন করুন<br>5️⃣ Question Count ও Time Limit দিন<br>6️⃣ Publish করুন<br><br>তারপর Question Bank-এর matching Active প্রশ্নগুলো দিয়ে system নিজেই Quiz Pool বানাবে।</p></div>
+      <div class="notice compact-notice"><b>💡 উদাহরণ</b><p>Class 9 + বিজ্ঞান + Chapter 5 + 20 প্রশ্ন দিলে Chapter 5-এর সব Active প্রশ্ন Pool হবে এবং প্রতিবার Student-কে 20টি Random প্রশ্ন দেওয়া হবে।</p></div>
+    </div>
+  </div>
+
+  {% if quizzes %}
+  <div class="card section-card">
+    <div class="section-title"><div><h2>📋 Quiz List</h2><p class="muted">প্রতিটি Quiz-এর automatic pool, per-attempt count, maximum, random ও time দেখা যাবে।</p></div></div>
+    <div class="table-wrap"><table><thead><tr><th>Quiz</th><th>Class</th><th>Subject</th><th>Chapter</th><th>Pool</th><th>Per Attempt</th><th>Max</th><th>Random</th><th>Time</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>{% for q in quizzes %}<tr><td><b>{{q.title}}</b>{% if q.description %}<div class="tiny-note">{{q.description}}</div>{% endif %}</td><td>{{q.class_name or 'সব'}}</td><td>{{q.subject_name or 'মিশ্র'}}</td><td>{{q.chapter_name or 'সাধারণ'}}</td><td>{{q.question_pool_count}}</td><td>{{q.question_count or q.question_pool_count}}</td><td>{{q.max_question_count or 50}}</td><td>{{'হ্যাঁ' if q.randomize_questions else 'না'}}</td><td>{{q.time_limit}} min</td><td><span class="status {{'published' if q.published else 'draft'}}">{{'Published' if q.published else 'Draft'}}</span></td><td><div class="row-actions"><a class="btn tiny" href="{{url_for('admin_quizzes',edit=q.id)}}">Edit</a><form method="post" action="{{url_for('admin_quiz_toggle',quiz_id=q.id)}}"><button class="btn tiny">{{'Unpublish' if q.published else 'Publish'}}</button></form><form method="post" action="{{url_for('admin_quiz_delete',quiz_id=q.id)}}" onsubmit="return confirm('এই Quiz মুছে ফেলবেন?')"><button class="btn tiny danger">Delete</button></form></div></td></tr>{% endfor %}</tbody></table></div>
+  </div>
+  {% endif %}
+</div>
+<script>
+async function loadQChapters(classId,subjectId,targetId,keep=''){const target=document.getElementById(targetId);if(!target)return;const res=await fetch('{{url_for('api_chapters')}}?class_id='+encodeURIComponent(classId||'')+'&subject_id='+encodeURIComponent(subjectId||''));const data=await res.json();target.innerHTML='<option value="">সব Chapter / সাধারণ Quiz</option>'+data.chapters.map(c=>`<option value="${c.id}" ${String(c.id)===String(keep)?'selected':''}>${c.title}</option>`).join('');}
+document.getElementById('quizClass')?.addEventListener('change',()=>loadQChapters(document.getElementById('quizClass').value,document.getElementById('quizSubject').value,'quizChapter'));document.getElementById('quizSubject')?.addEventListener('change',()=>loadQChapters(document.getElementById('quizClass').value,document.getElementById('quizSubject').value,'quizChapter'));if(document.getElementById('quizClass')&&document.getElementById('quizSubject'))loadQChapters(document.getElementById('quizClass').value,document.getElementById('quizSubject').value,'quizChapter','{{edit_quiz.chapter_id if edit_quiz else ''}}');
+</script>{% endblock %}

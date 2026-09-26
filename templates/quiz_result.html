@@ -1,0 +1,37 @@
+{% extends 'base.html' %}{% block title %}Quiz Result{% endblock %}{% block content %}
+<div class="wrap section">
+  <div class="card center result-card">
+    <div class="big">{% if timed_out %}⏰{% else %}🎉{% endif %}</div>
+    <h1>{% if timed_out %}সময় শেষ!{% else %}কুইজ সম্পন্ন!{% endif %}</h1>
+    <p class="muted">{{quiz.title}}</p>
+    <p class="score">{{score}} / {{total}}</p>
+    <div class="result-grid">
+      <div><b>{{correct}}</b><span>সঠিক উত্তর</span></div>
+      <div><b>{{question_total}}</b><span>মোট প্রশ্ন</span></div>
+      <div><b>+{{xp}}</b><span>অর্জিত XP</span></div>
+    </div>
+    <div class="result-message">{% if correct == question_total %}🌟 অসাধারণ! সবগুলো উত্তর সঠিক হয়েছে।{% elif correct >= (question_total * 0.7) %}👏 খুব ভালো! আরেকটু অনুশীলন করলে আরও ভালো হবে।{% else %}💪 আবার অনুশীলন করো—ভুলগুলো থেকেই শেখা যায়।{% endif %}</div>
+  </div>
+
+  <div class="section-title top-gap"><div><h2>📋 সম্পূর্ণ উত্তরপত্র</h2><p class="muted">সবুজ = সঠিক, লাল = ভুল। ভুল উত্তরের পাশে সঠিক উত্তরও দেখানো হয়েছে।</p></div></div>
+  <div class="review-list">
+  {% for item in review %}
+    <div class="review-card {{'review-correct' if item.is_correct else 'review-wrong'}}">
+      <div class="review-head"><div><span class="question-no">প্রশ্ন {{item.number}}</span><h3>{{item.question_text}}</h3></div><strong>{{item.marks}} mark</strong></div>
+      <div class="review-options">
+        {% for o in item.options %}
+          <div class="review-option {% if o.is_correct %}review-option-correct{% endif %}{% if o.is_selected and not o.is_correct %} review-option-wrong{% endif %}">
+            <span class="review-icon">{% if o.is_correct %}✅{% elif o.is_selected %}❌{% else %}○{% endif %}</span>
+            <span>{{o.option_text}}</span>
+            {% if o.is_selected %}<small>{% if o.is_correct %}তোমার উত্তর — সঠিক{% else %}তোমার উত্তর — ভুল{% endif %}</small>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+      {% if not item.is_correct %}
+        <div class="correct-answer-box"><b>✅ সঠিক উত্তর:</b> {{item.correct_answer}}{% if not item.selected_answer %}<span> • এই প্রশ্নের উত্তর দেওয়া হয়নি।</span>{% endif %}</div>
+      {% endif %}
+    </div>
+  {% endfor %}
+  </div>
+  <div class="actions center" style="justify-content:center"><a class="btn primary" href="{{url_for('student')}}">ড্যাশবোর্ডে ফিরি</a><a class="btn" href="{{url_for('student')}}">আরেকটি Quiz দিই</a></div>
+</div>{% endblock %}

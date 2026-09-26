@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Bulk Question Import{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <div class="adminhead">
+    <div><h1>📥 Bulk Question Import</h1><p>Excel (.xlsx) বা CSV থেকে একসঙ্গে প্রশ্ন এবং চাইলে Quiz তৈরি করুন।</p></div>
+    <div class="actions"><a class="btn" href="{{url_for('admin_questions')}}">← Question Bank</a><a class="btn primary" href="{{url_for('admin_question_import_template')}}">⬇ Excel Template</a></div>
+  </div>
+
+  <div class="grid two-col">
+    <div class="card section-card">
+      <h2>১. ফাইল প্রস্তুত করুন</h2>
+      <p>ZIP-এর <b>bulk_question_import_template.xlsx</b> অথবা এই পেজের Template ব্যবহার করুন।</p>
+      <ul>
+        <li>আবশ্যক: Class, Subject, Chapter, Question, Option A–D, Correct Answer</li>
+        <li>Difficulty: easy / medium / hard</li>
+        <li>Marks খালি রাখলে 1 হবে</li>
+        <li>Quiz Title দিলে একই import-এর প্রশ্নগুলো দিয়ে Quiz তৈরি হবে</li>
+        <li>Correct Answer: A/B/C/D অথবা 1/2/3/4</li>
+      </ul>
+    </div>
+    <div class="card section-card">
+      <h2>২. ফাইল Upload করুন</h2>
+      <form method="post" enctype="multipart/form-data">
+        <label>Excel / CSV ফাইল<input type="file" name="file" accept=".xlsx,.csv" required></label>
+        <p class="muted">প্রথমে Preview হবে। Preview ঠিক থাকলে তারপর Import confirm করতে হবে।</p>
+        <button class="btn primary" type="submit">🔎 Validate & Preview</button>
+      </form>
+    </div>
+  </div>
+
+  {% if errors %}
+  <div class="card section-card">
+    <h2>⚠️ Validation Error</h2>
+    <p>{{error_count}}টি error পাওয়া গেছে। প্রথম 100টি নিচে দেখানো হলো।</p>
+    <div class="flash error"><ul>{% for e in errors %}<li>{{e}}</li>{% endfor %}</ul></div>
+    <a class="btn" href="{{url_for('admin_question_import')}}">আবার Upload করুন</a>
+  </div>
+  {% endif %}
+
+  {% if preview %}
+  <div class="card section-card">
+    <div class="section-title"><div><h2>✅ Preview</h2><p class="muted"><b>{{filename}}</b> — মোট {{row_count}}টি row। নিচে প্রথম {{preview|length}}টি দেখা যাচ্ছে।</p></div></div>
+    <div class="table-wrap"><table><thead><tr><th>Row</th><th>Class</th><th>Subject</th><th>Chapter</th><th>Question</th><th>Correct</th><th>Level</th><th>Marks</th><th>Quiz</th></tr></thead><tbody>
+      {% for r in preview %}<tr><td>{{r.line}}</td><td>{{r.class_name}}</td><td>{{r.subject_name}}</td><td>{{r.chapter_title}}</td><td><b>{{r.question}}</b></td><td>{{'ABCD'[r.correct] if r.correct is not none else '—'}}</td><td>{{r.difficulty}}</td><td>{{r.marks}}</td><td>{{r.quiz_title or '—'}}</td></tr>{% endfor %}
+    </tbody></table></div>
+    <div class="actions" style="margin-top:16px"><form method="post" action="{{url_for('admin_question_import_confirm',token=token)}}"><button class="btn primary" onclick="return confirm('এই {{row_count}}টি row database-এ import করবেন?')">✅ Confirm Import ({{row_count}})</button></form><a class="btn" href="{{url_for('admin_question_import')}}">Cancel</a></div>
+  </div>
+  {% endif %}
+
+  <div class="card section-card">
+    <h2>📌 কীভাবে কাজ করবে?</h2>
+    <p><b>Class + Subject + Chapter</b> না থাকলে প্রয়োজনীয় record তৈরি হবে। একই Class + Chapter + Question আগে থাকলে duplicate question তৈরি হবে না; existing question reuse হবে। Quiz Title থাকলে Quiz-এ question link হবে এবং total marks স্বয়ংক্রিয়ভাবে হিসাব হবে।</p>
+  </div>
+</div>
+{% endblock %}

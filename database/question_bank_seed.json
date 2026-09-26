@@ -1,0 +1,2402 @@
+[
+  {
+    "class": 6,
+    "subject": "বাংলা",
+    "chapter": "ব্যাকরণ",
+    "question": "বাংলা বর্ণমালায় স্বরবর্ণ কতটি?",
+    "options": [
+      "১১টি",
+      "১০টি",
+      "১২টি",
+      "৯টি"
+    ],
+    "answer": 0,
+    "explanation": "বাংলা বর্ণমালায় স্বরবর্ণ ১১টি।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "বাংলা",
+    "chapter": "ব্যাকরণ",
+    "question": "“সুন্দর” শব্দের বিপরীত শব্দ কোনটি?",
+    "options": [
+      "কুৎসিত",
+      "মনোরম",
+      "মধুর",
+      "আকর্ষণীয়"
+    ],
+    "answer": 0,
+    "explanation": "সুন্দর-এর বিপরীত শব্দ কুৎসিত।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "বাংলা",
+    "chapter": "ব্যাকরণ",
+    "question": "“পাখি” কোন পদ?",
+    "options": [
+      "বিশেষ্য",
+      "বিশেষণ",
+      "ক্রিয়া",
+      "অব্যয়"
+    ],
+    "answer": 0,
+    "explanation": "পাখি একটি নামবাচক শব্দ, তাই বিশেষ্য।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "বাংলা",
+    "chapter": "সাহিত্য",
+    "question": "“আমাদের ছোট নদী” কবিতার কবি কে?",
+    "options": [
+      "রবীন্দ্রনাথ ঠাকুর",
+      "কাজী নজরুল ইসলাম",
+      "জসীমউদ্দীন",
+      "সুকুমার রায়"
+    ],
+    "answer": 0,
+    "explanation": "কবিতাটি রবীন্দ্রনাথ ঠাকুরের।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "বাংলা",
+    "chapter": "শব্দ ও বাক্য",
+    "question": "“আকাশ” শব্দের একটি সমার্থক শব্দ কোনটি?",
+    "options": [
+      "গগন",
+      "পাহাড়",
+      "সাগর",
+      "মাটি"
+    ],
+    "answer": 0,
+    "explanation": "গগন শব্দটি আকাশের সমার্থক।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "ইংরেজি",
+    "chapter": "Grammar",
+    "question": "Choose the correct article: ___ umbrella.",
+    "options": [
+      "a",
+      "an",
+      "the",
+      "no article"
+    ],
+    "answer": 1,
+    "explanation": "Umbrella begins with a vowel sound, so “an” is correct.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "ইংরেজি",
+    "chapter": "Grammar",
+    "question": "Choose the correct verb: He ___ football.",
+    "options": [
+      "play",
+      "plays",
+      "playing",
+      "played"
+    ],
+    "answer": 1,
+    "explanation": "With “He” in the simple present tense, the verb takes s/es.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "ইংরেজি",
+    "chapter": "Vocabulary",
+    "question": "The opposite of “hot” is —",
+    "options": [
+      "warm",
+      "cold",
+      "dry",
+      "bright"
+    ],
+    "answer": 1,
+    "explanation": "The opposite of hot is cold.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "ইংরেজি",
+    "chapter": "Grammar",
+    "question": "Which is the plural of “leaf”?",
+    "options": [
+      "leafs",
+      "leaves",
+      "leafes",
+      "leavs"
+    ],
+    "answer": 1,
+    "explanation": "The common plural form is “leaves”.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "ইংরেজি",
+    "chapter": "Sentence",
+    "question": "Choose the correct sentence.",
+    "options": [
+      "She go to school.",
+      "She goes to school.",
+      "She going to school.",
+      "She gone to school."
+    ],
+    "answer": 1,
+    "explanation": "“She goes to school” is grammatically correct.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "গণিত",
+    "chapter": "ভগ্নাংশ",
+    "question": "1/2 + 1/4 = ?",
+    "options": [
+      "1/6",
+      "2/4",
+      "3/4",
+      "3/8"
+    ],
+    "answer": 2,
+    "explanation": "1/2 = 2/4; therefore 2/4 + 1/4 = 3/4.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "গণিত",
+    "chapter": "পাটিগণিত",
+    "question": "25 × 4 = ?",
+    "options": [
+      "90",
+      "100",
+      "110",
+      "120"
+    ],
+    "answer": 1,
+    "explanation": "25 multiplied by 4 equals 100.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "গণিত",
+    "chapter": "জ্যামিতি",
+    "question": "ত্রিভুজের বাহু কয়টি?",
+    "options": [
+      "২টি",
+      "৩টি",
+      "৪টি",
+      "৫টি"
+    ],
+    "answer": 1,
+    "explanation": "A triangle has three sides.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "গণিত",
+    "chapter": "দশমিক",
+    "question": "0.5 সমান কোন ভগ্নাংশ?",
+    "options": [
+      "1/2",
+      "1/3",
+      "2/3",
+      "3/4"
+    ],
+    "answer": 0,
+    "explanation": "0.5 = 5/10 = 1/2.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "গণিত",
+    "chapter": "শতকরা",
+    "question": "200-এর 10% কত?",
+    "options": [
+      "10",
+      "20",
+      "25",
+      "30"
+    ],
+    "answer": 1,
+    "explanation": "10% of 200 is 20.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "বিজ্ঞান",
+    "chapter": "জীবজগৎ",
+    "question": "মানবদেহের বৃহত্তম অঙ্গ কোনটি?",
+    "options": [
+      "ত্বক",
+      "যকৃত",
+      "মস্তিষ্ক",
+      "ফুসফুস"
+    ],
+    "answer": 0,
+    "explanation": "ত্বক মানবদেহের বৃহত্তম অঙ্গ।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "বিজ্ঞান",
+    "chapter": "জীবজগৎ",
+    "question": "রক্তে অক্সিজেন বহনকারী উপাদান কোনটি?",
+    "options": [
+      "হিমোগ্লোবিন",
+      "প্লাজমা",
+      "শ্বেতকণিকা",
+      "অণুচক্রিকা"
+    ],
+    "answer": 0,
+    "explanation": "হিমোগ্লোবিন অক্সিজেনের সঙ্গে যুক্ত হয়ে তা বহন করে।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "বিজ্ঞান",
+    "chapter": "পদার্থ",
+    "question": "কোনটি কঠিন পদার্থ?",
+    "options": [
+      "বায়ু",
+      "পানি",
+      "পাথর",
+      "বাষ্প"
+    ],
+    "answer": 2,
+    "explanation": "পাথরের নির্দিষ্ট আকার ও আয়তন আছে, তাই এটি কঠিন।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "বিজ্ঞান",
+    "chapter": "উদ্ভিদ",
+    "question": "উদ্ভিদের খাদ্য তৈরির প্রধান অঙ্গ কোনটি?",
+    "options": [
+      "মূল",
+      "পাতা",
+      "ফুল",
+      "ফল"
+    ],
+    "answer": 1,
+    "explanation": "পাতায় সালোকসংশ্লেষণের মাধ্যমে খাদ্য তৈরি হয়।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "বিজ্ঞান",
+    "chapter": "শক্তি",
+    "question": "সূর্য আমাদের কী দেয়?",
+    "options": [
+      "শুধু শব্দ",
+      "আলো ও তাপ",
+      "শুধু পানি",
+      "শুধু মাটি"
+    ],
+    "answer": 1,
+    "explanation": "সূর্য পৃথিবীতে আলো ও তাপের প্রধান উৎস।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "বাংলাদেশ",
+    "question": "বাংলাদেশের রাজধানী কোনটি?",
+    "options": [
+      "ঢাকা",
+      "চট্টগ্রাম",
+      "রাজশাহী",
+      "খুলনা"
+    ],
+    "answer": 0,
+    "explanation": "ঢাকা বাংলাদেশের রাজধানী।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "বাংলাদেশ",
+    "question": "বাংলাদেশের জাতীয় ফুল কোনটি?",
+    "options": [
+      "শাপলা",
+      "গোলাপ",
+      "জবা",
+      "বেলি"
+    ],
+    "answer": 0,
+    "explanation": "শাপলা বাংলাদেশের জাতীয় ফুল।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "মুক্তিযুদ্ধ",
+    "question": "বাংলাদেশ স্বাধীনতা লাভ করে কোন সালে?",
+    "options": [
+      "১৯৭০",
+      "১৯৭১",
+      "১৯৭২",
+      "১৯৬৯"
+    ],
+    "answer": 1,
+    "explanation": "বাংলাদেশ ১৯৭১ সালে স্বাধীনতা অর্জন করে।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "ভূগোল",
+    "question": "বাংলাদেশের দীর্ঘতম সমুদ্রসৈকত কোথায়?",
+    "options": [
+      "কক্সবাজার",
+      "কুয়াকাটা",
+      "পতেঙ্গা",
+      "সেন্ট মার্টিন"
+    ],
+    "answer": 0,
+    "explanation": "কক্সবাজারে বিশ্বের দীর্ঘতম প্রাকৃতিক বালুময় সমুদ্রসৈকতগুলোর অন্যতম অবস্থিত।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "নাগরিকতা",
+    "question": "জাতীয় পতাকায় বাংলাদেশের কোন দুটি রং আছে?",
+    "options": [
+      "লাল ও সবুজ",
+      "নীল ও সাদা",
+      "হলুদ ও লাল",
+      "কালো ও সাদা"
+    ],
+    "answer": 0,
+    "explanation": "বাংলাদেশের জাতীয় পতাকায় সবুজ পটভূমির উপর লাল বৃত্ত আছে।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিশ্ব",
+    "question": "পৃথিবীর বৃহত্তম মহাদেশ কোনটি?",
+    "options": [
+      "এশিয়া",
+      "আফ্রিকা",
+      "ইউরোপ",
+      "অস্ট্রেলিয়া"
+    ],
+    "answer": 0,
+    "explanation": "এশিয়া আয়তন ও জনসংখ্যায় বৃহত্তম মহাদেশ।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিজ্ঞান",
+    "question": "পানির রাসায়নিক সংকেত কী?",
+    "options": [
+      "CO2",
+      "H2O",
+      "O2",
+      "NaCl"
+    ],
+    "answer": 1,
+    "explanation": "পানির সংকেত H2O।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিশ্ব",
+    "question": "জাতিসংঘের সদর দপ্তর কোথায়?",
+    "options": [
+      "লন্ডন",
+      "নিউইয়র্ক",
+      "প্যারিস",
+      "জেনেভা"
+    ],
+    "answer": 1,
+    "explanation": "জাতিসংঘের প্রধান সদর দপ্তর নিউইয়র্কে।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বাংলাদেশ",
+    "question": "জাতীয় স্মৃতিসৌধ কোথায় অবস্থিত?",
+    "options": [
+      "সাভার",
+      "গাজীপুর",
+      "টাঙ্গাইল",
+      "কুমিল্লা"
+    ],
+    "answer": 0,
+    "explanation": "জাতীয় স্মৃতিসৌধ সাভারে অবস্থিত।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 6,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "প্রকৃতি",
+    "question": "সূর্য কোন ধরনের নক্ষত্র?",
+    "options": [
+      "গ্রহ",
+      "উপগ্রহ",
+      "নক্ষত্র",
+      "ধূমকেতু"
+    ],
+    "answer": 2,
+    "explanation": "সূর্য একটি নক্ষত্র।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "বাংলা",
+    "chapter": "ব্যাকরণ",
+    "question": "“পরোপকারী” শব্দের বিপরীত শব্দ কোনটি?",
+    "options": [
+      "স্বার্থপর",
+      "সদয়",
+      "দানশীল",
+      "উপকারী"
+    ],
+    "answer": 0,
+    "explanation": "পরোপকারীর বিপরীত হলো স্বার্থপর।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "বাংলা",
+    "chapter": "ব্যাকরণ",
+    "question": "“সে দ্রুত দৌড়ায়”—এখানে “দ্রুত” কোন পদ?",
+    "options": [
+      "বিশেষ্য",
+      "ক্রিয়াবিশেষণ",
+      "সর্বনাম",
+      "অব্যয়"
+    ],
+    "answer": 1,
+    "explanation": "দ্রুত শব্দটি দৌড়ানোর ধরন বোঝাচ্ছে, তাই ক্রিয়াবিশেষণ।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "বাংলা",
+    "chapter": "সন্ধি",
+    "question": "“বিদ্যালয়” শব্দের মূল গঠন কোনটি?",
+    "options": [
+      "বিদ্যা + আলয়",
+      "বিদ + আলয়",
+      "বিধা + লয়",
+      "বিদ্যা + লয়"
+    ],
+    "answer": 0,
+    "explanation": "বিদ্যালয় = বিদ্যা + আলয়।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "বাংলা",
+    "chapter": "সাহিত্য",
+    "question": "“কাবুলিওয়ালা” গল্পের রচয়িতা কে?",
+    "options": [
+      "রবীন্দ্রনাথ ঠাকুর",
+      "শরৎচন্দ্র চট্টোপাধ্যায়",
+      "জসীমউদ্দীন",
+      "মানিক বন্দ্যোপাধ্যায়"
+    ],
+    "answer": 0,
+    "explanation": "কাবুলিওয়ালা রবীন্দ্রনাথ ঠাকুরের বিখ্যাত গল্প।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "বাংলা",
+    "chapter": "শব্দ",
+    "question": "“আনন্দ” শব্দের সমার্থক কোনটি?",
+    "options": [
+      "সুখ",
+      "দুঃখ",
+      "ভয়",
+      "রাগ"
+    ],
+    "answer": 0,
+    "explanation": "আনন্দ ও সুখ কাছাকাছি সমার্থক অর্থ বহন করে।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "ইংরেজি",
+    "chapter": "Tense",
+    "question": "Choose the correct form: They ___ football every day.",
+    "options": [
+      "play",
+      "plays",
+      "played",
+      "playing"
+    ],
+    "answer": 0,
+    "explanation": "With “They” in simple present, use “play”.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "ইংরেজি",
+    "chapter": "Grammar",
+    "question": "What is the comparative form of “good”?",
+    "options": [
+      "gooder",
+      "more good",
+      "better",
+      "best"
+    ],
+    "answer": 2,
+    "explanation": "The comparative form of good is better.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "ইংরেজি",
+    "chapter": "Preposition",
+    "question": "The book is ___ the table.",
+    "options": [
+      "on",
+      "at",
+      "into",
+      "from"
+    ],
+    "answer": 0,
+    "explanation": "“On the table” is the correct prepositional phrase.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "ইংরেজি",
+    "chapter": "Vocabulary",
+    "question": "The synonym of “quick” is —",
+    "options": [
+      "slow",
+      "fast",
+      "weak",
+      "late"
+    ],
+    "answer": 1,
+    "explanation": "Quick and fast have similar meanings.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "ইংরেজি",
+    "chapter": "Grammar",
+    "question": "Choose the correct plural of “mouse”.",
+    "options": [
+      "mouses",
+      "mice",
+      "mousees",
+      "mouses"
+    ],
+    "answer": 1,
+    "explanation": "The irregular plural of mouse is mice.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "গণিত",
+    "chapter": "বীজগণিত",
+    "question": "3x + 5 = 14 হলে x = ?",
+    "options": [
+      "2",
+      "3",
+      "4",
+      "5"
+    ],
+    "answer": 1,
+    "explanation": "3x = 9, so x = 3.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "গণিত",
+    "chapter": "বীজগণিত",
+    "question": "(a+b)² এর সঠিক সূত্র কোনটি?",
+    "options": [
+      "a²+2ab+b²",
+      "a²-b²",
+      "a²+b²",
+      "2ab"
+    ],
+    "answer": 0,
+    "explanation": "(a+b)² = a² + 2ab + b².",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "গণিত",
+    "chapter": "শতকরা",
+    "question": "500-এর 20% কত?",
+    "options": [
+      "50",
+      "75",
+      "100",
+      "125"
+    ],
+    "answer": 2,
+    "explanation": "20% of 500 = 100.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "গণিত",
+    "chapter": "জ্যামিতি",
+    "question": "আয়তক্ষেত্রের বিপরীত বাহুগুলোর বৈশিষ্ট্য কী?",
+    "options": [
+      "সমান ও সমান্তরাল",
+      "শুধু সমান",
+      "শুধু লম্ব",
+      "বক্র"
+    ],
+    "answer": 0,
+    "explanation": "আয়তক্ষেত্রে বিপরীত বাহু সমান ও সমান্তরাল।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "গণিত",
+    "chapter": "অনুপাত",
+    "question": "2:3 অনুপাতে মোট 25 হলে প্রথম অংশ কত?",
+    "options": [
+      "8",
+      "10",
+      "12",
+      "15"
+    ],
+    "answer": 1,
+    "explanation": "মোট অংশ 5; 25 ÷ 5 = 5; প্রথম অংশ 2×5=10.",
+    "difficulty": "hard",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "বিজ্ঞান",
+    "chapter": "জীববিজ্ঞান",
+    "question": "কোষের শক্তিঘর বলা হয় কাকে?",
+    "options": [
+      "রাইবোসোম",
+      "মাইটোকন্ড্রিয়া",
+      "নিউক্লিয়াস",
+      "কোষপ্রাচীর"
+    ],
+    "answer": 1,
+    "explanation": "মাইটোকন্ড্রিয়ায় কোষীয় শ্বসনের মাধ্যমে শক্তি উৎপন্ন হয়।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "বিজ্ঞান",
+    "chapter": "উদ্ভিদ",
+    "question": "সালোকসংশ্লেষণে কোন গ্যাস ব্যবহার হয়?",
+    "options": [
+      "অক্সিজেন",
+      "নাইট্রোজেন",
+      "কার্বন ডাই-অক্সাইড",
+      "হাইড্রোজেন"
+    ],
+    "answer": 2,
+    "explanation": "উদ্ভিদ CO2 গ্রহণ করে খাদ্য তৈরি করে।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "বিজ্ঞান",
+    "chapter": "পদার্থবিজ্ঞান",
+    "question": "আলোর গতি সবচেয়ে বেশি কোন মাধ্যমে?",
+    "options": [
+      "বায়ু",
+      "পানি",
+      "কাচ",
+      "শূন্যস্থান"
+    ],
+    "answer": 3,
+    "explanation": "শূন্যস্থানে আলো সর্বোচ্চ বেগে চলে।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "বিজ্ঞান",
+    "chapter": "রসায়ন",
+    "question": "pH = 7 সাধারণত কী নির্দেশ করে?",
+    "options": [
+      "অম্লীয়",
+      "ক্ষারীয়",
+      "নিরপেক্ষ",
+      "লবণাক্ত"
+    ],
+    "answer": 2,
+    "explanation": "pH 7-কে সাধারণভাবে নিরপেক্ষ ধরা হয়।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "বিজ্ঞান",
+    "chapter": "পরিবেশ",
+    "question": "বায়ুদূষণের একটি প্রধান কারণ কোনটি?",
+    "options": [
+      "বৃক্ষরোপণ",
+      "যানবাহনের ধোঁয়া",
+      "বৃষ্টিপাত",
+      "সূর্যের আলো"
+    ],
+    "answer": 1,
+    "explanation": "যানবাহনের ধোঁয়া বায়ুদূষণে বড় ভূমিকা রাখে।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "ইতিহাস",
+    "question": "১৯৫২ সালের ভাষা আন্দোলনের শহীদ দিবস কোন তারিখে?",
+    "options": [
+      "১৬ ডিসেম্বর",
+      "২১ ফেব্রুয়ারি",
+      "২৬ মার্চ",
+      "১৪ ডিসেম্বর"
+    ],
+    "answer": 1,
+    "explanation": "২১ ফেব্রুয়ারি ভাষা শহীদদের স্মরণে পালিত হয়।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "মুক্তিযুদ্ধ",
+    "question": "মুক্তিযুদ্ধের বিজয় দিবস কবে?",
+    "options": [
+      "২১ ফেব্রুয়ারি",
+      "২৬ মার্চ",
+      "১৬ ডিসেম্বর",
+      "১৭ মার্চ"
+    ],
+    "answer": 2,
+    "explanation": "১৬ ডিসেম্বর ১৯৭১ বিজয় অর্জিত হয়।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "ভূগোল",
+    "question": "বাংলাদেশের সবচেয়ে বড় ম্যানগ্রোভ বন কোনটি?",
+    "options": [
+      "সুন্দরবন",
+      "লাওয়াছড়া",
+      "ভাওয়াল",
+      "মধুপুর"
+    ],
+    "answer": 0,
+    "explanation": "সুন্দরবন বিশ্বের বৃহত্তম ম্যানগ্রোভ বন।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "নাগরিকতা",
+    "question": "বাংলাদেশের আইন প্রণয়নকারী প্রতিষ্ঠান কোনটি?",
+    "options": [
+      "জাতীয় সংসদ",
+      "সুপ্রিম কোর্ট",
+      "মন্ত্রিপরিষদ সচিবালয়",
+      "সেনাবাহিনী"
+    ],
+    "answer": 0,
+    "explanation": "জাতীয় সংসদ আইন প্রণয়ন করে।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "সমাজ",
+    "question": "সুশাসনের একটি গুরুত্বপূর্ণ বৈশিষ্ট্য কোনটি?",
+    "options": [
+      "স্বচ্ছতা",
+      "গোপনীয়তা",
+      "অন্যায়",
+      "বৈষম্য"
+    ],
+    "answer": 0,
+    "explanation": "স্বচ্ছতা সুশাসনের গুরুত্বপূর্ণ বৈশিষ্ট্য।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিশ্ব",
+    "question": "পৃথিবীর ক্ষুদ্রতম মহাদেশ কোনটি?",
+    "options": [
+      "ইউরোপ",
+      "অস্ট্রেলিয়া",
+      "এশিয়া",
+      "আফ্রিকা"
+    ],
+    "answer": 1,
+    "explanation": "অস্ট্রেলিয়া ক্ষুদ্রতম মহাদেশ।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিজ্ঞান",
+    "question": "পৃথিবীর একমাত্র প্রাকৃতিক উপগ্রহ কোনটি?",
+    "options": [
+      "সূর্য",
+      "চাঁদ",
+      "মঙ্গল",
+      "শুক্র"
+    ],
+    "answer": 1,
+    "explanation": "চাঁদ পৃথিবীর প্রাকৃতিক উপগ্রহ।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বাংলাদেশ",
+    "question": "বাংলাদেশের জাতীয় পাখি কোনটি?",
+    "options": [
+      "দোয়েল",
+      "ময়না",
+      "কোকিল",
+      "বাবুই"
+    ],
+    "answer": 0,
+    "explanation": "দোয়েল বাংলাদেশের জাতীয় পাখি।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিশ্ব",
+    "question": "পৃথিবীর বৃহত্তম মহাসাগর কোনটি?",
+    "options": [
+      "আটলান্টিক",
+      "ভারত",
+      "প্রশান্ত",
+      "আর্কটিক"
+    ],
+    "answer": 2,
+    "explanation": "প্রশান্ত মহাসাগর আয়তনে বৃহত্তম।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 7,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "সংস্কৃতি",
+    "question": "বাংলাদেশের জাতীয় কবি কে?",
+    "options": [
+      "কাজী নজরুল ইসলাম",
+      "রবীন্দ্রনাথ ঠাকুর",
+      "জসীমউদ্দীন",
+      "সুকান্ত ভট্টাচার্য"
+    ],
+    "answer": 0,
+    "explanation": "কাজী নজরুল ইসলাম বাংলাদেশের জাতীয় কবি।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "বাংলা",
+    "chapter": "ব্যাকরণ",
+    "question": "“নিন্দা” শব্দের বিপরীত কোনটি?",
+    "options": [
+      "প্রশংসা",
+      "সমালোচনা",
+      "অপমান",
+      "গালি"
+    ],
+    "answer": 0,
+    "explanation": "নিন্দার বিপরীত প্রশংসা।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "বাংলা",
+    "chapter": "সন্ধি",
+    "question": "“হিমালয়” শব্দটি কী বোঝায়?",
+    "options": [
+      "তুষারের আলয়",
+      "সমুদ্র",
+      "নদী",
+      "পাহাড়ি নদী"
+    ],
+    "answer": 0,
+    "explanation": "হিম + আলয় = তুষারের আবাস; হিমালয় নামটির অর্থের সঙ্গে তা সম্পর্কিত।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "বাংলা",
+    "chapter": "সাহিত্য",
+    "question": "“লালসালু” উপন্যাসের রচয়িতা কে?",
+    "options": [
+      "সৈয়দ ওয়ালীউল্লাহ্",
+      "হুমায়ূন আহমেদ",
+      "শওকত ওসমান",
+      "জহির রায়হান"
+    ],
+    "answer": 0,
+    "explanation": "লালসালু সৈয়দ ওয়ালীউল্লাহ্-এর উপন্যাস।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "বাংলা",
+    "chapter": "সমাস",
+    "question": "“রাজপথ” কোন সমাসের উদাহরণ?",
+    "options": [
+      "কর্মধারয়",
+      "তৎপুরুষ",
+      "দ্বন্দ্ব",
+      "বহুব্রীহি"
+    ],
+    "answer": 1,
+    "explanation": "রাজের পথ—তৎপুরুষ সমাসের উদাহরণ।",
+    "difficulty": "hard",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "বাংলা",
+    "chapter": "বাক্য",
+    "question": "“তুমি কি যাবে?” বাক্যটি কোন ধরনের?",
+    "options": [
+      "বিবৃতিমূলক",
+      "প্রশ্নবোধক",
+      "আদেশসূচক",
+      "বিস্ময়সূচক"
+    ],
+    "answer": 1,
+    "explanation": "প্রশ্ন করা হয়েছে, তাই এটি প্রশ্নবোধক বাক্য।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "ইংরেজি",
+    "chapter": "Grammar",
+    "question": "Choose the correct tense: She ___ her homework already.",
+    "options": [
+      "finish",
+      "finished",
+      "has finished",
+      "finishing"
+    ],
+    "answer": 2,
+    "explanation": "“Already” commonly takes present perfect here: has finished.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "ইংরেজি",
+    "chapter": "Voice",
+    "question": "“They built the bridge.” Passive voice is —",
+    "options": [
+      "The bridge is built by them.",
+      "The bridge was built by them.",
+      "The bridge has built by them.",
+      "The bridge built them."
+    ],
+    "answer": 1,
+    "explanation": "Past simple passive uses was/were + past participle.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "ইংরেজি",
+    "chapter": "Reported Speech",
+    "question": "He said, “I am tired.” Indirect speech is —",
+    "options": [
+      "He said that I am tired.",
+      "He said that he was tired.",
+      "He says that he tired.",
+      "He said he is tired."
+    ],
+    "answer": 1,
+    "explanation": "Pronoun and tense change appropriately in reported speech.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "ইংরেজি",
+    "chapter": "Vocabulary",
+    "question": "The antonym of “ancient” is —",
+    "options": [
+      "old",
+      "modern",
+      "historic",
+      "early"
+    ],
+    "answer": 1,
+    "explanation": "Modern is the opposite of ancient.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "ইংরেজি",
+    "chapter": "Preposition",
+    "question": "She is good ___ English.",
+    "options": [
+      "at",
+      "on",
+      "in",
+      "for"
+    ],
+    "answer": 0,
+    "explanation": "The standard expression is “good at”.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "গণিত",
+    "chapter": "বীজগণিত",
+    "question": "x² - 9 এর উৎপাদক কোনটি?",
+    "options": [
+      "(x-3)(x+3)",
+      "(x-9)(x+1)",
+      "(x-3)²",
+      "x(x-9)"
+    ],
+    "answer": 0,
+    "explanation": "x²-9 = (x-3)(x+3).",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "গণিত",
+    "chapter": "জ্যামিতি",
+    "question": "সামান্তরিকের বিপরীত কোণ কেমন?",
+    "options": [
+      "সমান",
+      "অসমান",
+      "সবসময় সমকোণ",
+      "শুধু দুটি কোণ থাকে"
+    ],
+    "answer": 0,
+    "explanation": "সামান্তরিকের বিপরীত কোণ সমান।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "গণিত",
+    "chapter": "পরিসংখ্যান",
+    "question": "2, 4, 6, 8-এর গড় কত?",
+    "options": [
+      "4",
+      "5",
+      "6",
+      "7"
+    ],
+    "answer": 1,
+    "explanation": "যোগফল 20; 20 ÷ 4 = 5.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "গণিত",
+    "chapter": "শতকরা",
+    "question": "800 টাকার 15% কত?",
+    "options": [
+      "100",
+      "120",
+      "140",
+      "160"
+    ],
+    "answer": 1,
+    "explanation": "800 × 15/100 = 120.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "গণিত",
+    "chapter": "সমীকরণ",
+    "question": "2x - 7 = 9 হলে x = ?",
+    "options": [
+      "6",
+      "7",
+      "8",
+      "9"
+    ],
+    "answer": 2,
+    "explanation": "2x=16, তাই x=8.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "বিজ্ঞান",
+    "chapter": "মানবদেহ",
+    "question": "হৃদপিণ্ডের প্রধান কাজ কী?",
+    "options": [
+      "রক্ত পাম্প করা",
+      "খাদ্য হজম করা",
+      "শ্বাস নেওয়া",
+      "হাড় তৈরি করা"
+    ],
+    "answer": 0,
+    "explanation": "হৃদপিণ্ড সারা শরীরে রক্ত সঞ্চালন করে।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "বিজ্ঞান",
+    "chapter": "রসায়ন",
+    "question": "লবণের সাধারণ রাসায়নিক সংকেত কোনটি?",
+    "options": [
+      "NaCl",
+      "H2O",
+      "CO2",
+      "O2"
+    ],
+    "answer": 0,
+    "explanation": "সাধারণ খাবার লবণের সংকেত NaCl।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "বিজ্ঞান",
+    "chapter": "পদার্থবিজ্ঞান",
+    "question": "বিদ্যুৎ প্রবাহের একক কী?",
+    "options": [
+      "ভোল্ট",
+      "অ্যাম্পিয়ার",
+      "ওহম",
+      "ওয়াট"
+    ],
+    "answer": 1,
+    "explanation": "Electric current is measured in ampere.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "বিজ্ঞান",
+    "chapter": "পরিবেশ",
+    "question": "গ্রিনহাউস প্রভাবে কোন গ্যাস গুরুত্বপূর্ণ?",
+    "options": [
+      "অক্সিজেন",
+      "কার্বন ডাই-অক্সাইড",
+      "হিলিয়াম",
+      "নিয়ন"
+    ],
+    "answer": 1,
+    "explanation": "CO2 অন্যতম প্রধান গ্রিনহাউস গ্যাস।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "বিজ্ঞান",
+    "chapter": "জীববিজ্ঞান",
+    "question": "মানবদেহে রক্ত পরিশোধনের প্রধান অঙ্গ কোনটি?",
+    "options": [
+      "কিডনি",
+      "পাকস্থলী",
+      "ফুসফুস",
+      "চোখ"
+    ],
+    "answer": 0,
+    "explanation": "কিডনি রক্ত থেকে বর্জ্য ছেঁকে মূত্র তৈরি করে।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "ইতিহাস",
+    "question": "বাংলাদেশের জাতীয় স্মৃতিসৌধ কোথায়?",
+    "options": [
+      "সাভার",
+      "গাজীপুর",
+      "ময়মনসিংহ",
+      "খুলনা"
+    ],
+    "answer": 0,
+    "explanation": "জাতীয় স্মৃতিসৌধ সাভারে।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "মুক্তিযুদ্ধ",
+    "question": "স্বাধীনতার ঘোষণার সঙ্গে কোন দিনটি বিশেষভাবে সম্পর্কিত?",
+    "options": [
+      "২৬ মার্চ",
+      "২১ ফেব্রুয়ারি",
+      "১৬ ডিসেম্বর",
+      "১৪ এপ্রিল"
+    ],
+    "answer": 0,
+    "explanation": "২৬ মার্চ বাংলাদেশের স্বাধীনতা দিবস।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "ভূগোল",
+    "question": "বাংলাদেশের বৃহত্তম দ্বীপ কোনটি?",
+    "options": [
+      "ভোলা",
+      "সন্দ্বীপ",
+      "হাতিয়া",
+      "মহেশখালী"
+    ],
+    "answer": 0,
+    "explanation": "ভোলা বাংলাদেশের বৃহত্তম দ্বীপ হিসেবে পরিচিত।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "অর্থনীতি",
+    "question": "বাংলাদেশের মুদ্রার নাম কী?",
+    "options": [
+      "রুপি",
+      "টাকা",
+      "দিনার",
+      "রিয়াল"
+    ],
+    "answer": 1,
+    "explanation": "বাংলাদেশের মুদ্রা টাকা।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "নাগরিকতা",
+    "question": "ভোটার হওয়ার মূল শর্তগুলোর একটি কোনটি?",
+    "options": [
+      "নির্দিষ্ট বয়স পূর্ণ হওয়া",
+      "শুধু চাকরি থাকা",
+      "শুধু শহরে থাকা",
+      "শুধু শিক্ষিত হওয়া"
+    ],
+    "answer": 0,
+    "explanation": "ভোটাধিকার নির্দিষ্ট সাংবিধানিক ও আইনগত যোগ্যতার সঙ্গে সম্পর্কিত।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিশ্ব",
+    "question": "বিশ্বের সর্বোচ্চ পর্বতশৃঙ্গ কোনটি?",
+    "options": [
+      "K2",
+      "এভারেস্ট",
+      "কাঞ্চনজঙ্ঘা",
+      "আকনকাগুয়া"
+    ],
+    "answer": 1,
+    "explanation": "মাউন্ট এভারেস্ট সমুদ্রপৃষ্ঠ থেকে সর্বোচ্চ শৃঙ্গ।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিজ্ঞান",
+    "question": "মানবদেহে সাধারণভাবে কয়টি হাড় থাকে?",
+    "options": [
+      "২০৬",
+      "২০০",
+      "২১২",
+      "১৮০"
+    ],
+    "answer": 0,
+    "explanation": "প্রাপ্তবয়স্ক মানুষের দেহে সাধারণভাবে ২০৬টি হাড় থাকে।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিশ্ব",
+    "question": "সাহারা মরুভূমি কোন মহাদেশে?",
+    "options": [
+      "এশিয়া",
+      "আফ্রিকা",
+      "ইউরোপ",
+      "দক্ষিণ আমেরিকা"
+    ],
+    "answer": 1,
+    "explanation": "সাহারা উত্তর আফ্রিকায় অবস্থিত।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বাংলাদেশ",
+    "question": "পদ্মা সেতু উদ্বোধন করা হয় কোন সালে?",
+    "options": [
+      "২০২০",
+      "২০২১",
+      "২০২২",
+      "২০২৩"
+    ],
+    "answer": 2,
+    "explanation": "পদ্মা সেতু উদ্বোধন করা হয় ২৫ জুন ২০২২।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 8,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিশ্ব",
+    "question": "জাতিসংঘ প্রতিষ্ঠিত হয় কোন সালে?",
+    "options": [
+      "১৯৪৫",
+      "১৯৪৭",
+      "১৯৫০",
+      "১৯৩৯"
+    ],
+    "answer": 0,
+    "explanation": "জাতিসংঘ ১৯৪৫ সালে প্রতিষ্ঠিত হয়।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "বাংলা",
+    "chapter": "ব্যাকরণ",
+    "question": "“অকাল কুষ্মাণ্ড” কোন অর্থে ব্যবহৃত হয়?",
+    "options": [
+      "অপদার্থ ব্যক্তি",
+      "অতি জ্ঞানী",
+      "দয়ালু ব্যক্তি",
+      "সাহসী ব্যক্তি"
+    ],
+    "answer": 0,
+    "explanation": "অকাল কুষ্মাণ্ড বলতে অপদার্থ বা অকর্মণ্য ব্যক্তিকে বোঝায়।",
+    "difficulty": "hard",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "বাংলা",
+    "chapter": "সাহিত্য",
+    "question": "“বিদ্রোহী” কবিতার কবি কে?",
+    "options": [
+      "কাজী নজরুল ইসলাম",
+      "রবীন্দ্রনাথ ঠাকুর",
+      "জসীমউদ্দীন",
+      "সুকান্ত ভট্টাচার্য"
+    ],
+    "answer": 0,
+    "explanation": "বিদ্রোহী কাজী নজরুল ইসলামের বিখ্যাত কবিতা।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "বাংলা",
+    "chapter": "রচনা",
+    "question": "প্রবন্ধের প্রধান উদ্দেশ্য কী?",
+    "options": [
+      "কোনো বিষয়কে যুক্তিপূর্ণভাবে উপস্থাপন করা",
+      "শুধু গল্প বলা",
+      "শুধু ছড়া লেখা",
+      "শুধু তথ্য মুখস্থ করা"
+    ],
+    "answer": 0,
+    "explanation": "প্রবন্ধে একটি বিষয়কে ব্যাখ্যা ও যুক্তির মাধ্যমে উপস্থাপন করা হয়।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "বাংলা",
+    "chapter": "ব্যাকরণ",
+    "question": "“যে পরিশ্রম করে, সে সফল হয়”—এটি কোন ধরনের বাক্য?",
+    "options": [
+      "সরল",
+      "জটিল",
+      "যৌগিক",
+      "অসম্পূর্ণ"
+    ],
+    "answer": 1,
+    "explanation": "একটি প্রধান ও একটি অপ্রধান খণ্ডবাক্য থাকায় এটি জটিল বাক্য।",
+    "difficulty": "hard",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "বাংলা",
+    "chapter": "সাহিত্য",
+    "question": "বাংলা সাহিত্যের প্রথম সার্থক উপন্যাস হিসেবে কোনটি পরিচিত?",
+    "options": [
+      "দুর্গেশনন্দিনী",
+      "লালসালু",
+      "পথের পাঁচালী",
+      "শ্রীকান্ত"
+    ],
+    "answer": 0,
+    "explanation": "বঙ্কিমচন্দ্রের দুর্গেশনন্দিনীকে বাংলা সাহিত্যের প্রথম সার্থক উপন্যাস বলা হয়।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "ইংরেজি",
+    "chapter": "Grammar",
+    "question": "If I ___ rich, I would help the poor.",
+    "options": [
+      "am",
+      "was",
+      "were",
+      "be"
+    ],
+    "answer": 2,
+    "explanation": "In the second conditional, “were” is standard for hypothetical “I”.",
+    "difficulty": "hard",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "ইংরেজি",
+    "chapter": "Grammar",
+    "question": "Choose the correct form: Neither Rahim nor his friends ___ ready.",
+    "options": [
+      "is",
+      "are",
+      "was",
+      "be"
+    ],
+    "answer": 1,
+    "explanation": "The verb agrees with the nearer plural subject “friends”.",
+    "difficulty": "hard",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "ইংরেজি",
+    "chapter": "Transformation",
+    "question": "“He is too weak to walk.” The correct equivalent is —",
+    "options": [
+      "He is so weak that he cannot walk.",
+      "He is weak and he walks.",
+      "He can walk because he is weak.",
+      "He was too strong to walk."
+    ],
+    "answer": 0,
+    "explanation": "“too...to” can be transformed with “so...that...cannot”.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "ইংরেজি",
+    "chapter": "Vocabulary",
+    "question": "The synonym of “abundant” is —",
+    "options": [
+      "scarce",
+      "plentiful",
+      "empty",
+      "tiny"
+    ],
+    "answer": 1,
+    "explanation": "Abundant means plentiful or available in large amounts.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "ইংরেজি",
+    "chapter": "Voice",
+    "question": "“People speak English all over the world.” Passive is —",
+    "options": [
+      "English is spoken all over the world.",
+      "English was spoken all over the world.",
+      "English speaks all over the world.",
+      "English has spoken all over the world."
+    ],
+    "answer": 0,
+    "explanation": "Simple present passive uses is/am/are + past participle.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "গণিত",
+    "chapter": "বীজগণিত",
+    "question": "x² + 5x + 6 এর উৎপাদক কোনটি?",
+    "options": [
+      "(x+2)(x+3)",
+      "(x+1)(x+6)",
+      "(x-2)(x-3)",
+      "(x+5)(x+1)"
+    ],
+    "answer": 0,
+    "explanation": "x²+5x+6 = (x+2)(x+3).",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "গণিত",
+    "chapter": "সূচক",
+    "question": "2³ × 2² = ?",
+    "options": [
+      "2⁵",
+      "2⁶",
+      "4⁵",
+      "2¹"
+    ],
+    "answer": 0,
+    "explanation": "একই ভিত্তির ক্ষেত্রে সূচক যোগ হয়: 3+2=5.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "গণিত",
+    "chapter": "জ্যামিতি",
+    "question": "একটি সমকোণী ত্রিভুজের একটি কোণ কত?",
+    "options": [
+      "45°",
+      "60°",
+      "90°",
+      "180°"
+    ],
+    "answer": 2,
+    "explanation": "A right triangle has one 90° angle.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "গণিত",
+    "chapter": "সম্ভাবনা",
+    "question": "একটি সুষম মুদ্রা একবার নিক্ষেপে Head পাওয়ার সম্ভাবনা কত?",
+    "options": [
+      "1/4",
+      "1/2",
+      "2/3",
+      "1"
+    ],
+    "answer": 1,
+    "explanation": "There are two equally likely outcomes, so P(Head)=1/2.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "গণিত",
+    "chapter": "পরিসংখ্যান",
+    "question": "5, 7, 9, 11, 13-এর মধ্যক কত?",
+    "options": [
+      "7",
+      "8",
+      "9",
+      "11"
+    ],
+    "answer": 2,
+    "explanation": "The middle value in the ordered list is 9.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "বিজ্ঞান",
+    "chapter": "পদার্থবিজ্ঞান",
+    "question": "বলের SI একক কী?",
+    "options": [
+      "জুল",
+      "নিউটন",
+      "ওয়াট",
+      "প্যাসকেল"
+    ],
+    "answer": 1,
+    "explanation": "Force is measured in newton.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "বিজ্ঞান",
+    "chapter": "রসায়ন",
+    "question": "পারমাণবিক সংখ্যা কী নির্দেশ করে?",
+    "options": [
+      "নিউট্রনের সংখ্যা",
+      "প্রোটনের সংখ্যা",
+      "ইলেকট্রনের ভর",
+      "অণুর সংখ্যা"
+    ],
+    "answer": 1,
+    "explanation": "Atomic number equals the number of protons in the nucleus.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "বিজ্ঞান",
+    "chapter": "জীববিজ্ঞান",
+    "question": "DNA কোথায় প্রধানত অবস্থান করে?",
+    "options": [
+      "নিউক্লিয়াসে",
+      "কোষপ্রাচীরে",
+      "রাইবোসোমে",
+      "শূন্যস্থানে"
+    ],
+    "answer": 0,
+    "explanation": "In eukaryotic cells, most DNA is in the nucleus.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "বিজ্ঞান",
+    "chapter": "পরিবেশ",
+    "question": "ওজোন স্তর প্রধানত কোন মণ্ডলে অবস্থিত?",
+    "options": [
+      "ট্রপোস্ফিয়ার",
+      "স্ট্র্যাটোস্ফিয়ার",
+      "মেসোস্ফিয়ার",
+      "থার্মোস্ফিয়ার"
+    ],
+    "answer": 1,
+    "explanation": "The ozone layer is concentrated in the stratosphere.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "বিজ্ঞান",
+    "chapter": "শক্তি",
+    "question": "শক্তির SI একক কী?",
+    "options": [
+      "নিউটন",
+      "জুল",
+      "ওয়াট",
+      "অ্যাম্পিয়ার"
+    ],
+    "answer": 1,
+    "explanation": "Energy is measured in joule.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "সংবিধান",
+    "question": "বাংলাদেশের সংবিধান কার্যকর হয় কবে?",
+    "options": [
+      "২৬ মার্চ ১৯৭১",
+      "১৬ ডিসেম্বর ১৯৭১",
+      "৪ নভেম্বর ১৯৭২",
+      "১৬ ডিসেম্বর ১৯৭২"
+    ],
+    "answer": 2,
+    "explanation": "The Constitution came into effect on 16 December 1972; it was adopted on 4 November 1972.",
+    "difficulty": "hard",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "মুক্তিযুদ্ধ",
+    "question": "মুক্তিযুদ্ধের সময় বাংলাদেশকে কয়টি সেক্টরে ভাগ করা হয়েছিল?",
+    "options": [
+      "৭",
+      "৯",
+      "১১",
+      "১৩"
+    ],
+    "answer": 2,
+    "explanation": "The liberation war was organized into 11 sectors.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "ভূগোল",
+    "question": "বাংলাদেশের বৃহত্তম জেলা (আয়তনে) কোনটি?",
+    "options": [
+      "রাঙামাটি",
+      "চট্টগ্রাম",
+      "ঢাকা",
+      "খুলনা"
+    ],
+    "answer": 0,
+    "explanation": "রাঙামাটি আয়তনে বাংলাদেশের বৃহত্তম জেলা।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "অর্থনীতি",
+    "question": "GDP-এর পূর্ণরূপ কী?",
+    "options": [
+      "Gross Domestic Product",
+      "General Domestic Price",
+      "Global Development Product",
+      "Gross Development Plan"
+    ],
+    "answer": 0,
+    "explanation": "GDP stands for Gross Domestic Product.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "আন্তর্জাতিক",
+    "question": "জাতিসংঘের নিরাপত্তা পরিষদের স্থায়ী সদস্য কয়টি?",
+    "options": [
+      "৩",
+      "৫",
+      "৭",
+      "১০"
+    ],
+    "answer": 1,
+    "explanation": "There are five permanent members.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিশ্ব",
+    "question": "বিশ্বের বৃহত্তম মহাদেশ কোনটি?",
+    "options": [
+      "এশিয়া",
+      "আফ্রিকা",
+      "ইউরোপ",
+      "উত্তর আমেরিকা"
+    ],
+    "answer": 0,
+    "explanation": "এশিয়া বৃহত্তম মহাদেশ।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিজ্ঞান",
+    "question": "সূর্যের সবচেয়ে কাছের গ্রহ কোনটি?",
+    "options": [
+      "শুক্র",
+      "বুধ",
+      "পৃথিবী",
+      "মঙ্গল"
+    ],
+    "answer": 1,
+    "explanation": "Mercury is the closest planet to the Sun.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বাংলাদেশ",
+    "question": "বাংলাদেশের জাতীয় বৃক্ষ কোনটি?",
+    "options": [
+      "আমগাছ",
+      "শালগাছ",
+      "বটগাছ",
+      "কাঁঠালগাছ"
+    ],
+    "answer": 3,
+    "explanation": "কাঁঠালগাছ বাংলাদেশের জাতীয় বৃক্ষ।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিশ্ব",
+    "question": "ইউনেস্কোর সদর দপ্তর কোথায়?",
+    "options": [
+      "প্যারিস",
+      "রোম",
+      "নিউইয়র্ক",
+      "লন্ডন"
+    ],
+    "answer": 0,
+    "explanation": "UNESCO is headquartered in Paris.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 9,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিজ্ঞান",
+    "question": "মানবদেহের স্বাভাবিক তাপমাত্রা প্রায় কত?",
+    "options": [
+      "৩০°C",
+      "৩৭°C",
+      "৪০°C",
+      "৪৫°C"
+    ],
+    "answer": 1,
+    "explanation": "Average normal body temperature is around 37°C, with normal variation.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "বাংলা",
+    "chapter": "সাহিত্য",
+    "question": "“সোনার তরী” কাব্যগ্রন্থের রচয়িতা কে?",
+    "options": [
+      "রবীন্দ্রনাথ ঠাকুর",
+      "কাজী নজরুল ইসলাম",
+      "জীবনানন্দ দাশ",
+      "সুধীন্দ্রনাথ দত্ত"
+    ],
+    "answer": 0,
+    "explanation": "সোনার তরী রবীন্দ্রনাথ ঠাকুরের অন্যতম বিখ্যাত কাব্যগ্রন্থ।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "বাংলা",
+    "chapter": "সাহিত্য",
+    "question": "“পদ্মা নদীর মাঝি” উপন্যাসের লেখক কে?",
+    "options": [
+      "মানিক বন্দ্যোপাধ্যায়",
+      "বিভূতিভূষণ বন্দ্যোপাধ্যায়",
+      "তারাশঙ্কর বন্দ্যোপাধ্যায়",
+      "শরৎচন্দ্র চট্টোপাধ্যায়"
+    ],
+    "answer": 0,
+    "explanation": "পদ্মা নদীর মাঝি মানিক বন্দ্যোপাধ্যায়ের উপন্যাস।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "বাংলা",
+    "chapter": "ব্যাকরণ",
+    "question": "“মহৎ” শব্দের বিপরীত কোনটি?",
+    "options": [
+      "ক্ষুদ্র",
+      "হীন",
+      "সৎ",
+      "বড়"
+    ],
+    "answer": 1,
+    "explanation": "মহৎ-এর বিপরীত অর্থে হীন ব্যবহৃত হয়।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "বাংলা",
+    "chapter": "ব্যাকরণ",
+    "question": "“নির্দোষ” শব্দে কোন উপসর্গ আছে?",
+    "options": [
+      "নি",
+      "নির্",
+      "দোষ",
+      "দোষী"
+    ],
+    "answer": 1,
+    "explanation": "নির্দোষ = নির্ + দোষ; “নির্” উপসর্গ।",
+    "difficulty": "hard",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "বাংলা",
+    "chapter": "সাহিত্য",
+    "question": "“বনলতা সেন” কবিতার কবি কে?",
+    "options": [
+      "জীবনানন্দ দাশ",
+      "সুকান্ত ভট্টাচার্য",
+      "জসীমউদ্দীন",
+      "আল মাহমুদ"
+    ],
+    "answer": 0,
+    "explanation": "বনলতা সেন জীবনানন্দ দাশের বিখ্যাত কবিতা।",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "ইংরেজি",
+    "chapter": "Grammar",
+    "question": "Choose the correct sentence.",
+    "options": [
+      "He has went home.",
+      "He has gone home.",
+      "He have gone home.",
+      "He gone home."
+    ],
+    "answer": 1,
+    "explanation": "Present perfect uses has/have + past participle: has gone.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "ইংরেজি",
+    "chapter": "Grammar",
+    "question": "No sooner had he arrived ___ the meeting started.",
+    "options": [
+      "when",
+      "than",
+      "then",
+      "and"
+    ],
+    "answer": 1,
+    "explanation": "The standard correlative is “no sooner...than”.",
+    "difficulty": "hard",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "ইংরেজি",
+    "chapter": "Clause",
+    "question": "“Although he is poor, he is honest.” The first clause is —",
+    "options": [
+      "principal clause",
+      "subordinate clause",
+      "noun clause",
+      "coordinate clause"
+    ],
+    "answer": 1,
+    "explanation": "“Although he is poor” cannot stand alone as the main message; it is subordinate.",
+    "difficulty": "hard",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "ইংরেজি",
+    "chapter": "Vocabulary",
+    "question": "The meaning of “meticulous” is —",
+    "options": [
+      "careless",
+      "very careful",
+      "angry",
+      "quick"
+    ],
+    "answer": 1,
+    "explanation": "Meticulous means very careful and precise.",
+    "difficulty": "hard",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "ইংরেজি",
+    "chapter": "Narration",
+    "question": "She said, “I will go.” Indirect speech is —",
+    "options": [
+      "She said that I would go.",
+      "She said that she would go.",
+      "She says she will go.",
+      "She said she will go."
+    ],
+    "answer": 1,
+    "explanation": "Pronoun and future tense change appropriately in reported speech.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "গণিত",
+    "chapter": "দ্বিঘাত সমীকরণ",
+    "question": "x² - 5x + 6 = 0-এর মূল কোন দুটি?",
+    "options": [
+      "1 ও 6",
+      "2 ও 3",
+      "-2 ও -3",
+      "3 ও 4"
+    ],
+    "answer": 1,
+    "explanation": "x²-5x+6=(x-2)(x-3), so roots are 2 and 3.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "গণিত",
+    "chapter": "ত্রিকোণমিতি",
+    "question": "sin 30° এর মান কত?",
+    "options": [
+      "1/2",
+      "√3/2",
+      "1",
+      "0"
+    ],
+    "answer": 0,
+    "explanation": "sin 30° = 1/2.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "গণিত",
+    "chapter": "স্থানাঙ্ক জ্যামিতি",
+    "question": "(0,0) ও (3,4) বিন্দুর দূরত্ব কত?",
+    "options": [
+      "4",
+      "5",
+      "6",
+      "7"
+    ],
+    "answer": 1,
+    "explanation": "Distance = √(3²+4²)=5.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "গণিত",
+    "chapter": "সম্ভাবনা",
+    "question": "একটি পাশা ছোড়ায় 6 পাওয়ার সম্ভাবনা কত?",
+    "options": [
+      "1/2",
+      "1/3",
+      "1/6",
+      "1/12"
+    ],
+    "answer": 2,
+    "explanation": "A fair die has six equally likely faces.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "গণিত",
+    "chapter": "সূচক ও লগারিদম",
+    "question": "log₁₀ 100 = ?",
+    "options": [
+      "1",
+      "2",
+      "10",
+      "100"
+    ],
+    "answer": 1,
+    "explanation": "10²=100, so log₁₀100=2.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "বিজ্ঞান",
+    "chapter": "জীববিজ্ঞান",
+    "question": "মানবদেহে ইনসুলিন কোন অঙ্গ থেকে নিঃসৃত হয়?",
+    "options": [
+      "অগ্ন্যাশয়",
+      "যকৃত",
+      "কিডনি",
+      "থাইরয়েড"
+    ],
+    "answer": 0,
+    "explanation": "The pancreas produces insulin.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "বিজ্ঞান",
+    "chapter": "পদার্থবিজ্ঞান",
+    "question": "ওহমের সূত্র কোনটি?",
+    "options": [
+      "V=IR",
+      "P=VI",
+      "F=ma",
+      "E=mc²"
+    ],
+    "answer": 0,
+    "explanation": "Ohm’s law states V = IR.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "বিজ্ঞান",
+    "chapter": "রসায়ন",
+    "question": "অক্সিডেশনের একটি সাধারণ উদাহরণ কোনটি?",
+    "options": [
+      "লোহার মরিচা পড়া",
+      "বরফ গলা",
+      "পানি জমা",
+      "বাষ্পীভবন"
+    ],
+    "answer": 0,
+    "explanation": "Rusting of iron is an oxidation process.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "বিজ্ঞান",
+    "chapter": "পদার্থবিজ্ঞান",
+    "question": "বিদ্যুৎ ক্ষমতার একক কী?",
+    "options": [
+      "ওয়াট",
+      "জুল",
+      "নিউটন",
+      "কুলম্ব"
+    ],
+    "answer": 0,
+    "explanation": "Power is measured in watt.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "বিজ্ঞান",
+    "chapter": "জীববিজ্ঞান",
+    "question": "বংশগতির মৌলিক একক কী?",
+    "options": [
+      "জিন",
+      "টিস্যু",
+      "অঙ্গ",
+      "হরমোন"
+    ],
+    "answer": 0,
+    "explanation": "Gene is the basic unit of heredity.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "মুক্তিযুদ্ধ",
+    "question": "মুক্তিযুদ্ধের সর্বাধিনায়ক কে ছিলেন?",
+    "options": [
+      "বঙ্গবন্ধু শেখ মুজিবুর রহমান",
+      "জেনারেল এম এ জি ওসমানী",
+      "তাজউদ্দীন আহমদ",
+      "সৈয়দ নজরুল ইসলাম"
+    ],
+    "answer": 1,
+    "explanation": "General M. A. G. Osmani served as Commander-in-Chief of the Bangladesh Forces.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "সংবিধান",
+    "question": "বাংলাদেশের সংবিধানের মূলনীতির সংখ্যা কত?",
+    "options": [
+      "৩",
+      "৪",
+      "৫",
+      "৬"
+    ],
+    "answer": 1,
+    "explanation": "The Constitution identifies four fundamental state principles.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "ভূগোল",
+    "question": "বাংলাদেশের জাতীয় সংসদ ভবনের স্থপতি কে?",
+    "options": [
+      "লুই আই কান",
+      "ফ্রাঙ্ক লয়েড রাইট",
+      "চার্লস কোরিয়া",
+      "লে করবুজিয়ে"
+    ],
+    "answer": 0,
+    "explanation": "জাতীয় সংসদ ভবনের স্থপতি ছিলেন লুই আই কান।",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "অর্থনীতি",
+    "question": "মুদ্রাস্ফীতি বলতে কী বোঝায়?",
+    "options": [
+      "সাধারণ মূল্যস্তরের ধারাবাহিক বৃদ্ধি",
+      "শুধু বেকারত্ব বৃদ্ধি",
+      "শুধু রপ্তানি বৃদ্ধি",
+      "শুধু জনসংখ্যা বৃদ্ধি"
+    ],
+    "answer": 0,
+    "explanation": "Inflation is a sustained increase in the general price level.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "বাংলাদেশ ও বিশ্বপরিচয়",
+    "chapter": "আন্তর্জাতিক",
+    "question": "SAARC-এর সদর দপ্তর কোথায়?",
+    "options": [
+      "ঢাকা",
+      "কাঠমান্ডু",
+      "নয়াদিল্লি",
+      "কলম্বো"
+    ],
+    "answer": 1,
+    "explanation": "SAARC Secretariat is in Kathmandu, Nepal.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিশ্ব",
+    "question": "বিশ্বের বৃহত্তম দ্বীপ কোনটি?",
+    "options": [
+      "মাদাগাস্কার",
+      "গ্রিনল্যান্ড",
+      "বর্নিও",
+      "নিউজিল্যান্ডের দক্ষিণ দ্বীপ"
+    ],
+    "answer": 1,
+    "explanation": "Greenland is the world’s largest island (excluding continental landmasses).",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিজ্ঞান",
+    "question": "আলোকবর্ষ কী মাপে?",
+    "options": [
+      "সময়",
+      "দূরত্ব",
+      "ভর",
+      "তাপমাত্রা"
+    ],
+    "answer": 1,
+    "explanation": "A light-year is a unit of distance.",
+    "difficulty": "easy",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিশ্ব",
+    "question": "আন্তর্জাতিক আদালত (ICJ) কোথায়?",
+    "options": [
+      "দ্য হেগ",
+      "প্যারিস",
+      "জেনেভা",
+      "ব্রাসেলস"
+    ],
+    "answer": 0,
+    "explanation": "The International Court of Justice is seated in The Hague.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বাংলাদেশ",
+    "question": "বাংলাদেশের জাতীয় পতাকার লাল বৃত্ত কী নির্দেশ করে?",
+    "options": [
+      "সূর্য/উদীয়মান সূর্য ও আত্মত্যাগের প্রতীক",
+      "সমুদ্র",
+      "ধান",
+      "পাহাড়"
+    ],
+    "answer": 0,
+    "explanation": "It is commonly interpreted as the rising sun and the blood of those who died in the Liberation War.",
+    "difficulty": "medium",
+    "marks": 1
+  },
+  {
+    "class": 10,
+    "subject": "সাধারণ জ্ঞান",
+    "chapter": "বিজ্ঞান",
+    "question": "CPU-এর পূর্ণরূপ কী?",
+    "options": [
+      "Central Processing Unit",
+      "Computer Power Unit",
+      "Central Program Utility",
+      "Control Processing User"
+    ],
+    "answer": 0,
+    "explanation": "CPU stands for Central Processing Unit.",
+    "difficulty": "easy",
+    "marks": 1
+  }
+]
