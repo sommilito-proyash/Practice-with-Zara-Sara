@@ -74,6 +74,12 @@ class DB:
     def fetchall(self, sql, params=()):
         return self.execute(sql, params).fetchall()
 
+    def executemany(self, sql, seq_of_params):
+        if self.pg:
+            sql = sql.replace('?', '%s')
+        self.cur.executemany(sql, seq_of_params)
+        return self.cur
+
     def commit(self):
         self.c.commit()
 
@@ -1160,61 +1166,288 @@ def _validate_bulk_rows(rows):
         if row['quiz_title'] and len(row['quiz_title'])>200: errors.append(prefix+'Quiz Title 200 অক্ষরের মধ্যে রাখুন।')
     return errors
 
-def _get_or_create_class(d,name):
-    row=d.fetchone('SELECT id FROM classes WHERE lower(name)=lower(?) LIMIT 1',(name,))
-    if row: return row['id']
-    m=re.search(r'(1[0-2]|[1-9])$',name)
-    if not m: raise ValueError(f'অজানা Class: {name}')
-    n=int(m.group(1)); return d.insert_id('INSERT INTO classes(name,display_order,stage,active) VALUES(?,?,?,?)',(f'শ্রেণি {n}',n,_class_stage(n),True))
-
-def _get_or_create_subject(d,name):
-    row=d.fetchone('SELECT id FROM subjects WHERE lower(name)=lower(?) LIMIT 1',(name,))
-    return row['id'] if row else d.insert_id('INSERT INTO subjects(name,icon,display_order,active) VALUES(?,?,?,?)',(name,'📘',99,True))
-
-def _get_or_create_chapter(d,subject_id,class_id,title):
-    row=d.fetchone('SELECT id FROM chapters WHERE subject_id=? AND title=? AND (class_id=? OR class_id IS NULL) ORDER BY CASE WHEN class_id=? THEN 0 ELSE 1 END,id LIMIT 1',(subject_id,title,class_id,class_id))
-    return row['id'] if row else d.insert_id('INSERT INTO chapters(subject_id,class_id,title) VALUES(?,?,?)',(subject_id,class_id,title))
-
-def _find_existing_question(d,class_id,chapter_id,text):
-    return d.fetchone('SELECT id FROM questions WHERE class_id=? AND chapter_id=? AND lower(trim(question_text))=lower(trim(?)) LIMIT 1',(class_id,chapter_id,text))
-
-def _ensure_question_capacity(d, class_id, extra=1, exclude_qid=None):
-    if class_id is None:
-        return
-    sql='SELECT COUNT(*) AS n FROM questions WHERE class_id=?'
-    params=[int(class_id)]
-    if exclude_qid is not None:
-        sql+=' AND id<>?'; params.append(int(exclude_qid))
-    current=int(d.fetchone(sql,tuple(params))['n'])
-    if current + int(extra or 0) > MAX_QUESTIONS_PER_CLASS:
-        raise ValueError(f'এই Class-এ সর্বোচ্চ {MAX_QUESTIONS_PER_CLASS}টি প্রশ্ন রাখা যাবে। বর্তমানে {current}টি আছে।')
+def _bulk_norm(value):
+    return str(value or '').strip().casefold()
 
 
-def _import_bulk_rows(d,rows):
-    created_questions=reused_questions=created_quizzes=linked_quiz_questions=0; quiz_ids={}
+def _bulk_in_clause(values):
+    return ','.join('?' for _ in values)
+
+
+def _bulk_load_or_create_catalog(d, rows):
+    class_names = {_bulk_norm(r['class_name']): r['class_name'].strip() for r in rows}
+    subject_names = {_bulk_norm(r['subject_name']): r['subject_name'].strip() for r in rows}
+
+    class_cache = {}
+    for item in d.fetchall('SELECT id,name FROM classes'):
+        class_cache[_bulk_norm(item['name'])] = item['id']
+    for key, display_name in class_names.items():
+        if key in class_cache:
+            continue
+        m = re.search(r'(1[0-2]|[1-9])$', display_name)
+        if not m:
+            raise ValueError(f'অজানা Class: {display_name}')
+        n = int(m.group(1))
+        class_cache[key] = d.insert_id(
+            'INSERT INTO classes(name,display_order,stage,active) VALUES(?,?,?,?)',
+            (f'শ্রেণি {n}', n, _class_stage(n), True),
+        )
+
+    subject_cache = {}
+    for item in d.fetchall('SELECT id,name FROM subjects'):
+        subject_cache[_bulk_norm(item['name'])] = item['id']
+    for key, display_name in subject_names.items():
+        if key in subject_cache:
+            continue
+        subject_cache[key] = d.insert_id(
+            'INSERT INTO subjects(name,icon,display_order,active) VALUES(?,?,?,?)',
+            (display_name, '📘', 99, True),
+        )
+
+    subject_ids = sorted(set(subject_cache.values()))
+    chapter_cache = {}
+    if subject_ids:
+        ph = _bulk_in_clause(subject_ids)
+        chapters = d.fetchall(
+            f'SELECT id,subject_id,class_id,title FROM chapters WHERE subject_id IN ({ph})',
+            tuple(subject_ids),
+        )
+        for ch in chapters:
+            chapter_cache[(int(ch['subject_id']), ch['class_id'], _bulk_norm(ch['title']))] = ch['id']
+
     for row in rows:
-        class_id=_get_or_create_class(d,row['class_name']); subject_id=_get_or_create_subject(d,row['subject_name']); chapter_id=_get_or_create_chapter(d,subject_id,class_id,row['chapter_title'])
-        existing=_find_existing_question(d,class_id,chapter_id,row['question'])
-        if existing: qid=existing['id']; reused_questions+=1
+        cid = class_cache[_bulk_norm(row['class_name'])]
+        sid = subject_cache[_bulk_norm(row['subject_name'])]
+        title = row['chapter_title'].strip()
+        exact_key = (sid, cid, _bulk_norm(title))
+        shared_key = (sid, None, _bulk_norm(title))
+        if exact_key in chapter_cache:
+            chapter_id = chapter_cache[exact_key]
+        elif shared_key in chapter_cache:
+            chapter_id = chapter_cache[shared_key]
         else:
-            _ensure_question_capacity(d,class_id,1)
-            qid=d.insert_id('INSERT INTO questions(subject_id,chapter_id,class_id,question_text,question_type,explanation,difficulty,marks,active) VALUES(?,?,?,?,?,?,?,?,?)',(subject_id,chapter_id,class_id,row['question'],'mcq',row['explanation'],row['difficulty'],row['marks'],True))
-            for i,opt in enumerate(row['options']): d.execute('INSERT INTO question_options(question_id,option_text,is_correct,display_order) VALUES(?,?,?,?)',(qid,opt,i==row['correct'],i+1))
-            created_questions+=1
+            chapter_id = d.insert_id(
+                'INSERT INTO chapters(subject_id,class_id,title) VALUES(?,?,?)',
+                (sid, cid, title),
+            )
+            chapter_cache[exact_key] = chapter_id
+        row['_class_id'] = cid
+        row['_subject_id'] = sid
+        row['_chapter_id'] = chapter_id
+    return class_cache, subject_cache, chapter_cache
+
+
+def _bulk_fetch_question_map(d, class_ids):
+    if not class_ids:
+        return {}, {}
+    ph = _bulk_in_clause(class_ids)
+    records = d.fetchall(
+        f"""SELECT id,class_id,chapter_id,question_text
+            FROM questions WHERE class_id IN ({ph})""",
+        tuple(class_ids),
+    )
+    qmap = {}
+    counts = {int(cid): 0 for cid in class_ids}
+    for q in records:
+        cid = int(q['class_id']) if q['class_id'] is not None else None
+        if cid is None:
+            continue
+        counts[cid] = counts.get(cid, 0) + 1
+        qmap[(cid, int(q['chapter_id']) if q['chapter_id'] is not None else None, _bulk_norm(q['question_text']))] = q['id']
+    return qmap, counts
+
+
+def _bulk_insert_questions(d, new_rows):
+    if not new_rows:
+        return []
+    values = [(r['_subject_id'], r['_chapter_id'], r['_class_id'], r['question'], 'mcq', r['explanation'], r['difficulty'], r['marks'], True) for r in new_rows]
+    ids = []
+    if d.pg:
+        sql = """INSERT INTO questions
+                 (subject_id,chapter_id,class_id,question_text,question_type,explanation,difficulty,marks,active)
+                 VALUES %s RETURNING id"""
+        for i in range(0, len(values), 500):
+            chunk = values[i:i + 500]
+            psycopg2.extras.execute_values(d.cur, sql, chunk, page_size=500)
+            ids.extend(row['id'] for row in d.cur.fetchall())
+    else:
+        for value in values:
+            d.cur.execute(
+                'INSERT INTO questions(subject_id,chapter_id,class_id,question_text,question_type,explanation,difficulty,marks,active) VALUES(?,?,?,?,?,?,?,?,?)',
+                value,
+            )
+            ids.append(d.cur.lastrowid)
+    return ids
+
+
+def _bulk_insert_options(d, option_rows):
+    if not option_rows:
+        return
+    if d.pg:
+        for i in range(0, len(option_rows), 1000):
+            psycopg2.extras.execute_values(
+                d.cur,
+                'INSERT INTO question_options(question_id,option_text,is_correct,display_order) VALUES %s',
+                option_rows[i:i + 1000],
+                page_size=1000,
+            )
+    else:
+        d.executemany(
+            'INSERT INTO question_options(question_id,option_text,is_correct,display_order) VALUES(?,?,?,?)',
+            option_rows,
+        )
+
+
+def _bulk_fetch_quiz_map(d, class_ids, subject_ids):
+    if not class_ids or not subject_ids:
+        return {}
+    cph = _bulk_in_clause(class_ids)
+    sph = _bulk_in_clause(subject_ids)
+    records = d.fetchall(
+        f"""SELECT id,title,class_id,subject_id,chapter_id FROM quizzes
+            WHERE class_id IN ({cph}) AND subject_id IN ({sph})""",
+        tuple(class_ids) + tuple(subject_ids),
+    )
+    return {
+        (int(r['class_id']), int(r['subject_id']), int(r['chapter_id']) if r['chapter_id'] is not None else None, _bulk_norm(r['title'])): r['id']
+        for r in records
+    }
+
+
+def _bulk_existing_quiz_links(d, quiz_ids):
+    if not quiz_ids:
+        return set(), {}
+    ph = _bulk_in_clause(quiz_ids)
+    records = d.fetchall(
+        f'SELECT quiz_id,question_id,display_order FROM quiz_questions WHERE quiz_id IN ({ph})',
+        tuple(quiz_ids),
+    )
+    links = {(int(r['quiz_id']), int(r['question_id'])) for r in records}
+    next_order = {int(qid): 1 for qid in quiz_ids}
+    for r in records:
+        quiz_id = int(r['quiz_id'])
+        next_order[quiz_id] = max(next_order.get(quiz_id, 1), int(r['display_order'] or 0) + 1)
+    return links, next_order
+
+
+def _bulk_insert_quizzes(d, quiz_rows):
+    if not quiz_rows:
+        return []
+    values = [(r['quiz_title'].strip(), r['quiz_description'], r['_class_id'], r['_subject_id'], r['_chapter_id'], r['time_limit'], 0, r['quiz_published'], 0, QUIZ_DEFAULT_MAX_QUESTION_COUNT, False, True) for r in quiz_rows]
+    ids = []
+    if d.pg:
+        sql = """INSERT INTO quizzes
+                 (title,description,class_id,subject_id,chapter_id,time_limit,total_marks,published,
+                  question_count,max_question_count,student_can_choose_count,randomize_questions)
+                 VALUES %s RETURNING id"""
+        for i in range(0, len(values), 500):
+            chunk = values[i:i + 500]
+            psycopg2.extras.execute_values(d.cur, sql, chunk, page_size=500)
+            ids.extend(row['id'] for row in d.cur.fetchall())
+    else:
+        for value in values:
+            d.cur.execute(
+                """INSERT INTO quizzes(title,description,class_id,subject_id,chapter_id,time_limit,total_marks,published,question_count,max_question_count,student_can_choose_count,randomize_questions)
+                   VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
+                value,
+            )
+            ids.append(d.cur.lastrowid)
+    return ids
+
+
+def _import_bulk_rows(d, rows):
+    """High-throughput bulk importer; keeps the entire import atomic."""
+    created_questions = reused_questions = created_quizzes = linked_quiz_questions = 0
+
+    _bulk_load_or_create_catalog(d, rows)
+    class_ids = sorted({int(r['_class_id']) for r in rows})
+    subject_ids = sorted({int(r['_subject_id']) for r in rows})
+
+    question_map, class_counts = _bulk_fetch_question_map(d, class_ids)
+    new_rows = []
+    row_qids = {}
+    seen_new = set()
+    for index, row in enumerate(rows):
+        key = (int(row['_class_id']), int(row['_chapter_id']), _bulk_norm(row['question']))
+        existing_qid = question_map.get(key)
+        if existing_qid is not None:
+            row_qids[index] = existing_qid
+            reused_questions += 1
+            continue
+        if key in seen_new:
+            raise ValueError(f"Row {row['line']}: একই import-এ duplicate question পাওয়া গেছে।")
+        seen_new.add(key)
+        cid = int(row['_class_id'])
+        if class_counts.get(cid, 0) + 1 > MAX_QUESTIONS_PER_CLASS:
+            raise ValueError(f'শ্রেণি {cid}-এ সর্বোচ্চ {MAX_QUESTIONS_PER_CLASS}টি প্রশ্ন রাখা যাবে।')
+        class_counts[cid] = class_counts.get(cid, 0) + 1
+        new_rows.append((index, row))
+
+    inserted_ids = _bulk_insert_questions(d, [r for _, r in new_rows])
+    if len(inserted_ids) != len(new_rows):
+        raise RuntimeError('Bulk question insert-এর generated ID সংখ্যা মেলেনি।')
+    option_rows = []
+    for (index, row), qid in zip(new_rows, inserted_ids):
+        row_qids[index] = qid
+        created_questions += 1
+        for option_no, option_text in enumerate(row['options'], 1):
+            option_rows.append((qid, option_text, option_no - 1 == row['correct'], option_no))
+    _bulk_insert_options(d, option_rows)
+
+    quiz_map = _bulk_fetch_quiz_map(d, class_ids, subject_ids)
+    import_quiz_keys = {}
+    for row in rows:
         if row['quiz_title']:
-            key=(class_id,subject_id,chapter_id,row['quiz_title'].strip().lower())
-            if key not in quiz_ids:
-                existing_quiz=d.fetchone('SELECT id FROM quizzes WHERE title=? AND class_id=? AND subject_id=? AND chapter_id=? LIMIT 1',(row['quiz_title'].strip(),class_id,subject_id,chapter_id))
-                if existing_quiz: quiz_id=existing_quiz['id']
-                else:
-                    quiz_id=d.insert_id('INSERT INTO quizzes(title,description,class_id,subject_id,chapter_id,time_limit,total_marks,published,question_count,max_question_count,student_can_choose_count,randomize_questions) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',(row['quiz_title'].strip(),row['quiz_description'],class_id,subject_id,chapter_id,row['time_limit'],0,row['quiz_published'],0,QUIZ_DEFAULT_MAX_QUESTION_COUNT,False,True)); created_quizzes+=1
-                quiz_ids[key]=quiz_id
-            quiz_id=quiz_ids[key]
-            if not d.fetchone('SELECT 1 AS ok FROM quiz_questions WHERE quiz_id=? AND question_id=?',(quiz_id,qid)):
-                order_row=d.fetchone('SELECT COALESCE(MAX(display_order),0)+1 AS n FROM quiz_questions WHERE quiz_id=?',(quiz_id,)); d.execute('INSERT INTO quiz_questions(quiz_id,question_id,display_order) VALUES(?,?,?)',(quiz_id,qid,order_row['n'])); linked_quiz_questions+=1
-    for quiz_id in set(quiz_ids.values()):
-        total=d.fetchone('SELECT COALESCE(SUM(q.marks),0) AS total FROM quiz_questions qq JOIN questions q ON q.id=qq.question_id WHERE qq.quiz_id=?',(quiz_id,))['total']; d.execute('UPDATE quizzes SET total_marks=? WHERE id=?',(total,quiz_id))
-    return created_questions,reused_questions,created_quizzes,linked_quiz_questions
+            key = (int(row['_class_id']), int(row['_subject_id']), int(row['_chapter_id']), _bulk_norm(row['quiz_title']))
+            import_quiz_keys.setdefault(key, row)
+
+    missing_quiz_rows = [row for key, row in import_quiz_keys.items() if key not in quiz_map]
+    new_quiz_ids = _bulk_insert_quizzes(d, missing_quiz_rows)
+    for row, quiz_id in zip(missing_quiz_rows, new_quiz_ids):
+        key = (int(row['_class_id']), int(row['_subject_id']), int(row['_chapter_id']), _bulk_norm(row['quiz_title']))
+        quiz_map[key] = quiz_id
+        created_quizzes += 1
+
+    affected_quiz_ids = sorted({quiz_map[key] for key in import_quiz_keys})
+    existing_links, next_order = _bulk_existing_quiz_links(d, affected_quiz_ids)
+    link_rows = []
+    for index, row in enumerate(rows):
+        if not row['quiz_title']:
+            continue
+        key = (int(row['_class_id']), int(row['_subject_id']), int(row['_chapter_id']), _bulk_norm(row['quiz_title']))
+        quiz_id = quiz_map[key]
+        qid = row_qids[index]
+        pair = (int(quiz_id), int(qid))
+        if pair in existing_links:
+            continue
+        order_no = next_order.get(int(quiz_id), 1)
+        link_rows.append((quiz_id, qid, order_no))
+        existing_links.add(pair)
+        next_order[int(quiz_id)] = order_no + 1
+
+    if link_rows:
+        if d.pg:
+            psycopg2.extras.execute_values(
+                d.cur,
+                'INSERT INTO quiz_questions(quiz_id,question_id,display_order) VALUES %s',
+                link_rows,
+                page_size=1000,
+            )
+        else:
+            d.executemany('INSERT INTO quiz_questions(quiz_id,question_id,display_order) VALUES(?,?,?)', link_rows)
+        linked_quiz_questions = len(link_rows)
+
+    for quiz_id in affected_quiz_ids:
+        stats = d.fetchone(
+            """SELECT COALESCE(SUM(q.marks),0) AS total, COUNT(*) AS n
+               FROM quiz_questions qq JOIN questions q ON q.id=qq.question_id
+               WHERE qq.quiz_id=?""",
+            (quiz_id,),
+        )
+        d.execute('UPDATE quizzes SET total_marks=?,question_count=? WHERE id=?', (stats['total'], stats['n'], quiz_id))
+
+    return created_questions, reused_questions, created_quizzes, linked_quiz_questions
+
 
 def _decode_bulk_payload(payload):
     """Return bulk-import rows regardless of DB driver payload type.
