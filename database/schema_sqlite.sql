@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS site_settings(id INTEGER PRIMARY KEY AUTOINCREMENT,site_name TEXT,tagline TEXT,purpose TEXT,about TEXT,hero_title TEXT,hero_subtitle TEXT,logo_url TEXT,hero_image_url TEXT,background_url TEXT,facebook_url TEXT);
-CREATE TABLE IF NOT EXISTS classes(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,display_order INTEGER DEFAULT 0,active INTEGER DEFAULT 1);
+CREATE TABLE IF NOT EXISTS classes(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,display_order INTEGER DEFAULT 0,active INTEGER DEFAULT 1,stage TEXT);
 CREATE TABLE IF NOT EXISTS subjects(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,icon TEXT DEFAULT '📘',display_order INTEGER DEFAULT 0,active INTEGER DEFAULT 1);
 CREATE TABLE IF NOT EXISTS chapters(id INTEGER PRIMARY KEY AUTOINCREMENT,subject_id INTEGER NOT NULL,class_id INTEGER, title TEXT NOT NULL,description TEXT,display_order INTEGER DEFAULT 0,active INTEGER DEFAULT 1,FOREIGN KEY(subject_id) REFERENCES subjects(id) ON DELETE CASCADE,FOREIGN KEY(class_id) REFERENCES classes(id));
 CREATE TABLE IF NOT EXISTS questions(id INTEGER PRIMARY KEY AUTOINCREMENT,subject_id INTEGER,chapter_id INTEGER,class_id INTEGER,question_text TEXT NOT NULL,question_type TEXT DEFAULT 'mcq',explanation TEXT,difficulty TEXT DEFAULT 'medium',marks INTEGER DEFAULT 1,active INTEGER DEFAULT 1,FOREIGN KEY(subject_id) REFERENCES subjects(id),FOREIGN KEY(chapter_id) REFERENCES chapters(id),FOREIGN KEY(class_id) REFERENCES classes(id));
@@ -23,3 +23,6 @@ CREATE INDEX IF NOT EXISTS idx_media_assets_slot_active ON media_assets(slot,act
 CREATE TABLE IF NOT EXISTS quiz_attempt_questions(attempt_id INTEGER NOT NULL,question_id INTEGER NOT NULL,display_order INTEGER NOT NULL,PRIMARY KEY(attempt_id,display_order),FOREIGN KEY(attempt_id) REFERENCES quiz_attempts(id) ON DELETE CASCADE,FOREIGN KEY(question_id) REFERENCES questions(id) ON DELETE CASCADE);
 CREATE INDEX IF NOT EXISTS idx_quiz_attempt_questions_attempt ON quiz_attempt_questions(attempt_id);
 CREATE INDEX IF NOT EXISTS idx_quiz_attempt_questions_question ON quiz_attempt_questions(question_id);
+
+CREATE TABLE IF NOT EXISTS bulk_import_batches(id INTEGER PRIMARY KEY AUTOINCREMENT,token TEXT UNIQUE NOT NULL,filename TEXT NOT NULL,row_count INTEGER NOT NULL,payload TEXT NOT NULL,created_at REAL NOT NULL,expires_at REAL NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_bulk_import_batches_expires ON bulk_import_batches(expires_at);

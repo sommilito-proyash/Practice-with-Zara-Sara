@@ -82,6 +82,7 @@ def ensure_prerequisites(d):
             ensure_schema(d)
 
     if USE_PG:
+        d.execute('ALTER TABLE classes ADD COLUMN IF NOT EXISTS stage TEXT')
         d.execute('ALTER TABLE chapters ADD COLUMN IF NOT EXISTS class_id BIGINT REFERENCES classes(id)')
         d.execute('ALTER TABLE questions ADD COLUMN IF NOT EXISTS class_id BIGINT REFERENCES classes(id)')
         d.execute('ALTER TABLE students ADD COLUMN IF NOT EXISTS practice_class_id BIGINT REFERENCES classes(id)')
@@ -93,7 +94,7 @@ def ensure_prerequisites(d):
         d.execute('CREATE INDEX IF NOT EXISTS idx_chapters_class_subject ON chapters(class_id,subject_id)')
     else:
         for table, column, definition in [
-            ('questions','class_id','INTEGER'), ('chapters','class_id','INTEGER'),
+            ('classes','stage','TEXT'), ('questions','class_id','INTEGER'), ('chapters','class_id','INTEGER'),
             ('students','practice_class_id','INTEGER'), ('students','email','TEXT'),
             ('students','phone','TEXT'), ('students','recovery_pin_hash','TEXT'),
             ('quizzes','chapter_id','INTEGER'), ('badges','active','INTEGER DEFAULT 1'),
@@ -105,9 +106,15 @@ def ensure_prerequisites(d):
         d.execute('CREATE INDEX IF NOT EXISTS idx_questions_class_subject ON questions(class_id,subject_id)')
         d.execute('CREATE INDEX IF NOT EXISTS idx_chapters_class_subject ON chapters(class_id,subject_id)')
 
-    for i in range(6, 11):
-        if not d.fetchone('SELECT id FROM classes WHERE name=? LIMIT 1', (f'শ্রেণি {i}',)):
-            d.execute('INSERT INTO classes(name,display_order) VALUES(?,?)', (f'শ্রেণি {i}', i-5))
+    def stage(n):
+        if n <= 5: return 'প্রাথমিক'
+        if n <= 8: return 'নিম্ন মাধ্যমিক'
+        if n <= 10: return 'মাধ্যমিক'
+        return 'উচ্চ মাধ্যমিক'
+    for i in range(1,13):
+        row=d.fetchone('SELECT id,stage FROM classes WHERE name=? LIMIT 1',(f'শ্রেণি {i}',))
+        if not row: d.execute('INSERT INTO classes(name,display_order,stage) VALUES(?,?,?)',(f'শ্রেণি {i}',i,stage(i)))
+        elif not row['stage']: d.execute('UPDATE classes SET stage=? WHERE id=?',(stage(i),row['id']))
     subjects = [
         ('বাংলা','📚',1),('ইংরেজি','🔤',2),('গণিত','➗',3),
         ('বিজ্ঞান','🔬',4),('বাংলাদেশ ও বিশ্বপরিচয়','🌍',5),('সাধারণ জ্ঞান','🧠',6)
@@ -142,7 +149,7 @@ def main():
             question_ids[(item['class'],item['subject'],item['question'])]=qid
 
         subjects=['বাংলা','ইংরেজি','গণিত','বিজ্ঞান','বাংলাদেশ ও বিশ্বপরিচয়','সাধারণ জ্ঞান']
-        for class_no in range(6,11):
+        for class_no in range(1,13):
             cid=d.fetchone('SELECT id FROM classes WHERE name=? LIMIT 1',(f'শ্রেণি {class_no}',))['id']
             for subject in subjects:
                 sid=d.fetchone('SELECT id FROM subjects WHERE name=? LIMIT 1',(subject,))['id']

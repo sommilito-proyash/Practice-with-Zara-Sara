@@ -32,12 +32,15 @@ load_dotenv()
 BASE = os.path.dirname(__file__)
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'change-this-secret-in-production')
-app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 25 * 1024 * 1024
 DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
 SQLITE_PATH = os.environ.get('SQLITE_PATH', os.path.join(BASE, 'zara_sara.db'))
 USE_PG = bool(DATABASE_URL)
 BOOL_TRUE = 'TRUE' if USE_PG else '1'
 MAX_QUESTIONS_PER_CLASS = 1000
+TOTAL_CLASS_COUNT = 12
+MAX_BULK_IMPORT_ROWS = 12000
+BULK_BATCH_TTL_SECONDS = 60 * 60
 QUIZ_DEFAULT_QUESTION_COUNT = 20
 QUIZ_DEFAULT_MAX_QUESTION_COUNT = 50
 
@@ -118,6 +121,7 @@ def _add_column_if_missing(d, table, column, definition):
 def ensure_schema_upgrades(d):
     """Safely upgrade an existing v4.x database without dropping user data."""
     if d.pg:
+        d.execute('ALTER TABLE classes ADD COLUMN IF NOT EXISTS stage TEXT')
         d.execute('ALTER TABLE chapters ADD COLUMN IF NOT EXISTS class_id BIGINT REFERENCES classes(id)')
         d.execute('ALTER TABLE questions ADD COLUMN IF NOT EXISTS class_id BIGINT REFERENCES classes(id)')
         d.execute('ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT')
@@ -135,6 +139,7 @@ def ensure_schema_upgrades(d):
         d.execute('ALTER TABLE games ADD COLUMN IF NOT EXISTS launch_url TEXT')
         d.execute('ALTER TABLE games ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0')
     else:
+        _add_column_if_missing(d, 'classes', 'stage', 'TEXT')
         _add_column_if_missing(d, 'chapters', 'class_id', 'INTEGER REFERENCES classes(id)')
         _add_column_if_missing(d, 'questions', 'class_id', 'INTEGER REFERENCES classes(id)')
         _add_column_if_missing(d, 'students', 'email', 'TEXT')
@@ -156,12 +161,38 @@ def ensure_schema_upgrades(d):
     d.execute('CREATE INDEX IF NOT EXISTS idx_quizzes_class_subject_chapter ON quizzes(class_id, subject_id, chapter_id)')
     d.execute('CREATE INDEX IF NOT EXISTS idx_quiz_questions_question ON quiz_questions(question_id)')
     d.execute('CREATE INDEX IF NOT EXISTS idx_students_practice_class ON students(practice_class_id)')
+    d.execute('CREATE INDEX IF NOT EXISTS idx_classes_order ON classes(display_order,active)')
     if d.pg:
         d.execute('CREATE TABLE IF NOT EXISTS quiz_attempt_questions(attempt_id BIGINT NOT NULL REFERENCES quiz_attempts(id) ON DELETE CASCADE,question_id BIGINT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,display_order INTEGER NOT NULL,PRIMARY KEY(attempt_id,display_order))')
     else:
         d.execute('CREATE TABLE IF NOT EXISTS quiz_attempt_questions(attempt_id INTEGER NOT NULL,question_id INTEGER NOT NULL,display_order INTEGER NOT NULL,PRIMARY KEY(attempt_id,display_order),FOREIGN KEY(attempt_id) REFERENCES quiz_attempts(id) ON DELETE CASCADE,FOREIGN KEY(question_id) REFERENCES questions(id) ON DELETE CASCADE)')
     d.execute('CREATE INDEX IF NOT EXISTS idx_quiz_attempt_questions_attempt ON quiz_attempt_questions(attempt_id)')
     d.execute('CREATE INDEX IF NOT EXISTS idx_quiz_attempt_questions_question ON quiz_attempt_questions(question_id)')
+    if d.pg:
+        d.execute('CREATE TABLE IF NOT EXISTS bulk_import_batches(id BIGSERIAL PRIMARY KEY,token TEXT UNIQUE NOT NULL,filename TEXT NOT NULL,row_count INTEGER NOT NULL,payload JSONB NOT NULL,created_at DOUBLE PRECISION NOT NULL,expires_at DOUBLE PRECISION NOT NULL)')
+    else:
+        d.execute('CREATE TABLE IF NOT EXISTS bulk_import_batches(id INTEGER PRIMARY KEY AUTOINCREMENT,token TEXT UNIQUE NOT NULL,filename TEXT NOT NULL,row_count INTEGER NOT NULL,payload TEXT NOT NULL,created_at REAL NOT NULL,expires_at REAL NOT NULL)')
+    d.execute('CREATE INDEX IF NOT EXISTS idx_bulk_import_batches_expires ON bulk_import_batches(expires_at)')
+
+
+def _class_stage(class_no):
+    try: n=int(class_no)
+    except (TypeError,ValueError): return 'স্কুল'
+    if 1 <= n <= 5: return 'প্রাথমিক'
+    if 6 <= n <= 8: return 'নিম্ন মাধ্যমিক'
+    if 9 <= n <= 10: return 'মাধ্যমিক'
+    if 11 <= n <= 12: return 'উচ্চ মাধ্যমিক'
+    return 'স্কুল'
+
+
+def _ensure_class_catalog(d):
+    for i in range(1, TOTAL_CLASS_COUNT + 1):
+        name=f'শ্রেণি {i}'; stage=_class_stage(i)
+        row=d.fetchone('SELECT id,stage FROM classes WHERE lower(name)=lower(?) LIMIT 1',(name,))
+        if not row:
+            d.execute('INSERT INTO classes(name,display_order,active,stage) VALUES(?,?,?,?)',(name,i,True,stage))
+        elif not row['stage']:
+            d.execute('UPDATE classes SET stage=? WHERE id=?',(stage,row['id']))
 
 
 def init_db():
@@ -187,7 +218,7 @@ def init_db():
                 (
                     'প্র্যাকটিস উইথ জারা-সারা',
                     'শিখি • অনুশীলন করি • এগিয়ে যাই',
-                    'ষষ্ঠ থেকে দশম শ্রেণির শিক্ষার্থীদের নিয়মিত অনুশীলন, আত্মমূল্যায়ন ও শেখার আগ্রহ বাড়াতে তৈরি একটি অনুশীলনভিত্তিক শিক্ষামূলক প্ল্যাটফর্ম।',
+                    'স্কুলগোয়িং শিক্ষার্থী থেকে দ্বাদশ শ্রেণি পর্যন্ত নিয়মিত অনুশীলন, আত্মমূল্যায়ন ও শেখার আগ্রহ বাড়াতে তৈরি একটি অনুশীলনভিত্তিক শিক্ষামূলক প্ল্যাটফর্ম।',
                     'এখানে একাডেমিক বিষয়, ইংরেজি, সাধারণ জ্ঞান, কুইজ ও শিক্ষামূলক গেম এক জায়গায় পাওয়া যাবে।',
                     'শেখা হোক আনন্দের, অনুশীলন হোক নিয়মিত!',
                     'জারা ও সারা তোমার শেখার সঙ্গী—প্রতিদিন একটু অনুশীলন, প্রতিদিন একটু এগিয়ে যাওয়া।',
@@ -200,13 +231,8 @@ def init_db():
                 ('admin', generate_password_hash('admin123')),
             )
 
-        # Ensure every required Class/Subject exists without replacing existing records.
-        for i in range(6, 11):
-            if not d.fetchone('SELECT id FROM classes WHERE name=? LIMIT 1', (f'শ্রেণি {i}',)):
-                d.execute(
-                    'INSERT INTO classes(name,display_order) VALUES(?,?)',
-                    (f'শ্রেণি {i}', i - 5),
-                )
+        # Ensure the complete Class 1–12 catalogue exists without replacing existing records.
+        _ensure_class_catalog(d)
 
         subjects = [
             ('বাংলা', '📚', 1),
@@ -275,6 +301,18 @@ def init_db():
         d.execute('UPDATE quizzes SET max_question_count=? WHERE max_question_count IS NULL OR max_question_count<=0', (QUIZ_DEFAULT_MAX_QUESTION_COUNT,))
         d.execute('UPDATE quizzes SET randomize_questions=? WHERE randomize_questions IS NULL', (True,))
         d.execute('UPDATE quizzes SET student_can_choose_count=? WHERE student_can_choose_count IS NULL', (False,))
+
+        starter_games = [
+            ('দ্রুত গণিত','quick-math','সময় ধরে দ্রুত অঙ্ক সমাধান করো।','builtin',1,{'icon':'➗','kind':'quick_math'}),
+            ('সংখ্যা রহস্য','number-pattern','ধারার পরের সংখ্যা বের করো—সহজ থেকে কঠিন।','builtin',2,{'icon':'🔢','kind':'number_pattern'}),
+            ('স্মৃতি মিল','memory-match','মনোযোগ ও স্মৃতিশক্তির মজার অনুশীলন।','builtin',3,{'icon':'🧠','kind':'memory_match'}),
+            ('শব্দ সাজাও','word-scramble','ইংরেজি শব্দের অক্ষর ঠিকভাবে সাজাও।','builtin',4,{'icon':'🔤','kind':'word_scramble'}),
+            ('দ্রুত সাধারণ জ্ঞান','quick-gk','স্কুল শিক্ষার্থীদের জন্য দ্রুত GK challenge।','builtin',5,{'icon':'🌍','kind':'quick_gk'}),
+        ]
+        for title,slug,descr,gtype,order_no,config in starter_games:
+            if not d.fetchone('SELECT id FROM games WHERE slug=? LIMIT 1',(slug,)):
+                d.execute('INSERT INTO games(title,slug,description,type,launch_url,active,display_order,config) VALUES(?,?,?,?,?,?,?,?)',(title,slug,descr,gtype,None,True,order_no,json.dumps(config,ensure_ascii=False)))
+
         d.commit()
     except Exception:
         d.rollback()
@@ -421,7 +459,7 @@ def home():
         )
         return render_template(
             'index.html', settings=settings, classes=classes, subjects=subjects,
-            notices=notices, gallery=gallery,
+            notices=notices, gallery=gallery, games=d.fetchall(f'SELECT * FROM games WHERE active={BOOL_TRUE} ORDER BY display_order,title LIMIT 6'),
         )
     finally:
         d.close()
@@ -603,6 +641,7 @@ def student():
             chapters=chapters, selected_subject=subject_id, selected_chapter=chapter_id,
             practice_class_id=practice_class_id,
             practice_classes=d.fetchall(f'SELECT * FROM classes WHERE active={BOOL_TRUE} ORDER BY display_order'),
+            games=d.fetchall(f'SELECT * FROM games WHERE active={BOOL_TRUE} ORDER BY display_order,title LIMIT 6'),
             notices=notices,
         )
     finally:
@@ -1021,51 +1060,68 @@ def admin_chapter_delete(cid):
 # ---------------------------------------------------------------------------
 BULK_IMPORT_DIR = os.path.join(BASE, 'instance', 'bulk_imports')
 os.makedirs(BULK_IMPORT_DIR, exist_ok=True)
-
 BULK_HEADERS = ['Class','Subject','Chapter','Quiz Title','Quiz Description','Quiz Published','Time Limit','Question','Option A','Option B','Option C','Option D','Correct Answer','Explanation','Difficulty','Marks']
 HEADER_ALIASES = {
-    'class':'Class','class name':'Class','শ্রেণি':'Class','শ্রেণী':'Class',
-    'subject':'Subject','বিষয়':'Subject','বিষয়':'Subject','chapter':'Chapter','অধ্যায়':'Chapter','অধ্যায়':'Chapter',
-    'quiz title':'Quiz Title','quiz':'Quiz Title','কুইজ':'Quiz Title','কুইজের নাম':'Quiz Title','quiz description':'Quiz Description','কুইজ বিবরণ':'Quiz Description',
-    'quiz published':'Quiz Published','published':'Quiz Published','প্রকাশিত':'Quiz Published','time limit':'Time Limit','সময়':'Time Limit','সময়':'Time Limit',
-    'question':'Question','question text':'Question','প্রশ্ন':'Question','option a':'Option A','a':'Option A','অপশন a':'Option A','অপশন ১':'Option A',
-    'option b':'Option B','b':'Option B','অপশন b':'Option B','অপশন ২':'Option B','option c':'Option C','c':'Option C','অপশন c':'Option C','অপশন ৩':'Option C',
-    'option d':'Option D','d':'Option D','অপশন d':'Option D','অপশন ৪':'Option D','correct answer':'Correct Answer','answer':'Correct Answer','correct':'Correct Answer','উত্তর':'Correct Answer','সঠিক উত্তর':'Correct Answer',
+    'class':'Class','class name':'Class','grade':'Class','grade name':'Class','শ্রেণি':'Class','শ্রেণী':'Class','ক্লাস':'Class',
+    'subject':'Subject','বিষয়':'Subject','বিষয়':'Subject','chapter':'Chapter','chapter name':'Chapter','অধ্যায়':'Chapter','অধ্যায়':'Chapter',
+    'quiz title':'Quiz Title','quiz':'Quiz Title','কুইজ':'Quiz Title','কুইজের নাম':'Quiz Title','quiz description':'Quiz Description','কুইজ বিবরণ':'Quiz Description','কুইজের বিবরণ':'Quiz Description',
+    'quiz published':'Quiz Published','published':'Quiz Published','প্রকাশিত':'Quiz Published','time limit':'Time Limit','time':'Time Limit','সময়':'Time Limit','সময়':'Time Limit',
+    'question':'Question','question text':'Question','প্রশ্ন':'Question','option a':'Option A','option 1':'Option A','a':'Option A','অপশন a':'Option A','অপশন ১':'Option A','অপশন 1':'Option A',
+    'option b':'Option B','option 2':'Option B','b':'Option B','অপশন b':'Option B','অপশন ২':'Option B','অপশন 2':'Option B',
+    'option c':'Option C','option 3':'Option C','c':'Option C','অপশন c':'Option C','অপশন ৩':'Option C','অপশন 3':'Option C',
+    'option d':'Option D','option 4':'Option D','d':'Option D','অপশন d':'Option D','অপশন ৪':'Option D','অপশন 4':'Option D',
+    'correct answer':'Correct Answer','answer':'Correct Answer','correct':'Correct Answer','উত্তর':'Correct Answer','সঠিক উত্তর':'Correct Answer',
     'explanation':'Explanation','ব্যাখ্যা':'Explanation','difficulty':'Difficulty','level':'Difficulty','কঠিনতা':'Difficulty','marks':'Marks','mark':'Marks','নম্বর':'Marks'
 }
+_BN_DIGITS=str.maketrans('০১২৩৪৫৬৭৮৯','0123456789')
+
+def _cell_text(value):
+    if value is None: return ''
+    if isinstance(value,bool): return '1' if value else '0'
+    if isinstance(value,float) and value.is_integer(): return str(int(value))
+    return str(value).strip()
+
+def _norm_number_text(value):
+    return unicodedata.normalize('NFKC',_cell_text(value)).translate(_BN_DIGITS)
 
 def _norm_header(value):
     text=unicodedata.normalize('NFKC',str(value or '')).strip().lower(); text=re.sub(r'\s+',' ',text)
     return HEADER_ALIASES.get(text,str(value or '').strip())
 
-def _cell_text(value):
-    if value is None: return ''
-    if isinstance(value,float) and value.is_integer(): return str(int(value))
-    return str(value).strip()
-
-def _truthy(value): return _cell_text(value).lower() in {'1','true','yes','y','on','published','হ্যাঁ','হ্যা','প্রকাশিত'}
+def _truthy(value): return _norm_number_text(value).lower() in {'1','true','yes','y','on','published','হ্যাঁ','হ্যা','প্রকাশিত'}
 
 def _parse_class_name(raw):
-    text=_cell_text(raw)
+    text=_norm_number_text(raw).strip()
     if not text: return ''
-    m=re.search(r'(?:class|শ্রেণি|শ্রেণী)?\s*([6-9]|10)\s*$',text,re.I)
+    m=re.fullmatch(r'(?:class|grade|শ্রেণি|শ্রেণী|ক্লাস)?\s*[-:]?\s*(1[0-2]|[1-9])',text,re.I)
     return f'শ্রেণি {m.group(1)}' if m else text
 
-def _parse_correct(raw, options):
-    value=_cell_text(raw); norm=value.lower()
-    mapping={'a':0,'b':1,'c':2,'d':3,'1':0,'2':1,'3':2,'4':3,'option a':0,'option b':1,'option c':2,'option d':3,'option 1':0,'option 2':1,'option 3':2,'option 4':3,'অপশন ১':0,'অপশন ২':1,'অপশন ৩':2,'অপশন ৪':3}
+def _parse_correct(raw,options):
+    value=_norm_number_text(raw); norm=value.lower(); mapping={'a':0,'b':1,'c':2,'d':3,'ক':0,'খ':1,'গ':2,'ঘ':3,'1':0,'2':1,'3':2,'4':3,'option a':0,'option b':1,'option c':2,'option d':3,'option 1':0,'option 2':1,'option 3':2,'option 4':3,'অপশন ১':0,'অপশন ২':1,'অপশন ৩':2,'অপশন ৪':3}
     if norm in mapping: return mapping[norm]
     for i,opt in enumerate(options):
-        if opt and norm==opt.strip().lower(): return i
+        if opt and norm==_norm_number_text(opt).strip().lower(): return i
     return None
+
+def _read_rows_limited(iterable):
+    rows=[]
+    for row in iterable:
+        rows.append(row)
+        if len(rows)>MAX_BULK_IMPORT_ROWS+1: raise ValueError(f'একটি import-এ সর্বোচ্চ {MAX_BULK_IMPORT_ROWS}টি data row রাখা যাবে।')
+    return rows
 
 def _read_bulk_file(path):
     ext=os.path.splitext(path)[1].lower()
     if ext=='.xlsx':
         if load_workbook is None: raise ValueError('Excel import-এর জন্য openpyxl package প্রয়োজন।')
-        wb=load_workbook(path,read_only=True,data_only=True); ws=wb['Questions'] if 'Questions' in wb.sheetnames else wb[wb.sheetnames[0]]; rows=list(ws.iter_rows(values_only=True)); wb.close()
+        wb=load_workbook(path,read_only=True,data_only=True)
+        try:
+            sheet=next((n for n in wb.sheetnames if n.strip().lower()=='questions'),wb.sheetnames[0] if wb.sheetnames else None)
+            if not sheet: raise ValueError('Excel workbook-এ কোনো worksheet পাওয়া যায়নি।')
+            rows=_read_rows_limited(wb[sheet].iter_rows(values_only=True))
+        finally: wb.close()
     elif ext=='.csv':
-        with open(path,'r',encoding='utf-8-sig',newline='') as f: rows=list(csv.reader(f))
+        with open(path,'r',encoding='utf-8-sig',newline='') as f: rows=_read_rows_limited(csv.reader(f))
     else: raise ValueError('শুধু .xlsx অথবা .csv ফাইল গ্রহণ করা হচ্ছে।')
     if not rows: raise ValueError('ফাইলটি খালি।')
     headers=[_norm_header(x) for x in rows[0]]; indexes={h:i for i,h in enumerate(headers) if h}
@@ -1077,36 +1133,39 @@ def _read_bulk_file(path):
         def val(h):
             i=indexes.get(h); return _cell_text(raw[i]) if i is not None and i<len(raw) else ''
         options=[val('Option A'),val('Option B'),val('Option C'),val('Option D')]; correct=_parse_correct(val('Correct Answer'),options)
-        try: marks=max(1,int(float(val('Marks') or '1')))
+        try: marks=max(1,int(float(_norm_number_text(val('Marks')) or '1')))
         except ValueError: marks=None
-        try: time_limit=max(0,int(float(val('Time Limit') or '0')))
+        try: time_limit=max(0,int(float(_norm_number_text(val('Time Limit')) or '0')))
         except ValueError: time_limit=None
-        difficulty=(val('Difficulty') or 'medium').lower(); difficulty=difficulty if difficulty in {'easy','medium','hard'} else 'medium'
+        difficulty=(val('Difficulty') or 'medium').strip().lower(); difficulty=difficulty if difficulty in {'easy','medium','hard'} else 'medium'
         parsed.append({'line':line_no,'class_name':_parse_class_name(val('Class')),'subject_name':val('Subject'),'chapter_title':val('Chapter'),'quiz_title':val('Quiz Title'),'quiz_description':val('Quiz Description'),'quiz_published':_truthy(val('Quiz Published')),'time_limit':time_limit,'question':val('Question'),'options':options,'correct':correct,'explanation':val('Explanation'),'difficulty':difficulty,'marks':marks})
     return parsed
 
 def _validate_bulk_rows(rows):
     errors=[]; seen=set()
+    if not rows: errors.append('কোনো data row পাওয়া যায়নি।')
     for row in rows:
         prefix=f"Row {row['line']}: "
         if not row['class_name'] or not row['subject_name'] or not row['chapter_title']: errors.append(prefix+'Class, Subject এবং Chapter আবশ্যক।')
+        elif not re.search(r'(1[0-2]|[1-9])$',row['class_name']): errors.append(prefix+'Class অবশ্যই 1 থেকে 12-এর মধ্যে হতে হবে।')
         if not row['question']: errors.append(prefix+'Question খালি।')
         if not all(row['options']): errors.append(prefix+'চারটি Option-ই দিতে হবে।')
+        if len(set(x.strip().lower() for x in row['options']))<4: errors.append(prefix+'চারটি option আলাদা হতে হবে।')
         if row['correct'] is None: errors.append(prefix+'Correct Answer A/B/C/D, 1/2/3/4 অথবা option-এর exact text হতে হবে।')
         if row['marks'] is None: errors.append(prefix+'Marks একটি সংখ্যা হতে হবে।')
         if row['time_limit'] is None: errors.append(prefix+'Time Limit একটি সংখ্যা হতে হবে।')
         key=(row['class_name'].lower(),row['subject_name'].lower(),row['chapter_title'].lower(),row['question'].strip().lower())
         if key in seen: errors.append(prefix+'একই file-এ duplicate question আছে।')
         seen.add(key)
-        if len(set(x.strip().lower() for x in row['options']))<4: errors.append(prefix+'চারটি option আলাদা হতে হবে।')
+        if row['quiz_title'] and len(row['quiz_title'])>200: errors.append(prefix+'Quiz Title 200 অক্ষরের মধ্যে রাখুন।')
     return errors
 
 def _get_or_create_class(d,name):
-    row=d.fetchone('SELECT id,name FROM classes WHERE lower(name)=lower(?) LIMIT 1',(name,))
+    row=d.fetchone('SELECT id FROM classes WHERE lower(name)=lower(?) LIMIT 1',(name,))
     if row: return row['id']
-    m=re.search(r'(6|7|8|9|10)$',name)
+    m=re.search(r'(1[0-2]|[1-9])$',name)
     if not m: raise ValueError(f'অজানা Class: {name}')
-    return d.insert_id('INSERT INTO classes(name,display_order,active) VALUES(?,?,?)',(name,int(m.group(1))-5,True))
+    n=int(m.group(1)); return d.insert_id('INSERT INTO classes(name,display_order,stage,active) VALUES(?,?,?,?)',(f'শ্রেণি {n}',n,_class_stage(n),True))
 
 def _get_or_create_subject(d,name):
     row=d.fetchone('SELECT id FROM subjects WHERE lower(name)=lower(?) LIMIT 1',(name,))
@@ -1157,72 +1216,120 @@ def _import_bulk_rows(d,rows):
         total=d.fetchone('SELECT COALESCE(SUM(q.marks),0) AS total FROM quiz_questions qq JOIN questions q ON q.id=qq.question_id WHERE qq.quiz_id=?',(quiz_id,))['total']; d.execute('UPDATE quizzes SET total_marks=? WHERE id=?',(total,quiz_id))
     return created_questions,reused_questions,created_quizzes,linked_quiz_questions
 
+def _decode_bulk_payload(payload):
+    """Return bulk-import rows regardless of DB driver payload type.
+
+    SQLite stores JSON as TEXT, while PostgreSQL JSONB is automatically
+    decoded by psycopg2 into Python list/dict objects. Calling json.loads()
+    on the latter raises: "the JSON object must be str, bytes or bytearray,
+    not list".
+    """
+    if isinstance(payload, (list, tuple)):
+        return list(payload)
+    if isinstance(payload, dict):
+        return payload.get('rows', payload)
+    if isinstance(payload, (bytes, bytearray)):
+        payload = payload.decode('utf-8')
+    if isinstance(payload, str):
+        decoded = json.loads(payload)
+        if isinstance(decoded, dict) and 'rows' in decoded:
+            return decoded['rows']
+        return decoded
+    raise ValueError('Bulk import preview data-এর format সঠিক নয়।')
+
+
+def _cleanup_bulk_batches(d):
+    try: d.execute('DELETE FROM bulk_import_batches WHERE expires_at < ?',(time.time(),)); d.commit()
+    except Exception: d.rollback()
+
+
 @app.route('/admin/questions/import',methods=['GET','POST'])
 @admin_required
 def admin_question_import():
-    if request.method=='GET': return render_template('admin/question_import.html')
-    upload=request.files.get('file')
-    if not upload or not upload.filename: flash('Excel (.xlsx) অথবা CSV ফাইল নির্বাচন করুন।','error'); return redirect(url_for('admin_question_import'))
-    filename=secure_filename(upload.filename); ext=os.path.splitext(filename)[1].lower()
-    if ext not in {'.xlsx','.csv'}: flash('শুধু .xlsx অথবা .csv ফাইল গ্রহণ করা হচ্ছে।','error'); return redirect(url_for('admin_question_import'))
-    token=secrets.token_urlsafe(18); path=os.path.join(BULK_IMPORT_DIR,token+ext); upload.save(path)
+    d=db()
     try:
-        rows=_read_bulk_file(path); errors=_validate_bulk_rows(rows)
-        if errors:
-            os.remove(path); return render_template('admin/question_import.html',errors=errors[:100],error_count=len(errors),row_count=len(rows))
-        with open(os.path.join(BULK_IMPORT_DIR,token+'.json'),'w',encoding='utf-8') as f: json.dump({'filename':filename,'path':path,'row_count':len(rows)},f,ensure_ascii=False)
-        return render_template('admin/question_import.html',token=token,preview=rows[:30],row_count=len(rows),filename=filename)
+        _cleanup_bulk_batches(d)
+        if request.method=='GET': return render_template('admin/question_import.html')
+        upload=request.files.get('file')
+        if not upload or not upload.filename:
+            flash('Excel (.xlsx) অথবা CSV ফাইল নির্বাচন করুন।','error'); return redirect(url_for('admin_question_import'))
+        filename=secure_filename(upload.filename); ext=os.path.splitext(filename)[1].lower()
+        if ext not in {'.xlsx','.csv'}:
+            flash('শুধু .xlsx অথবা .csv ফাইল গ্রহণ করা হচ্ছে।','error'); return redirect(url_for('admin_question_import'))
+        token=secrets.token_urlsafe(18); path=os.path.join(BULK_IMPORT_DIR,token+ext); upload.save(path)
+        try:
+            rows=_read_bulk_file(path); errors=_validate_bulk_rows(rows)
+            if errors: return render_template('admin/question_import.html',errors=errors[:100],error_count=len(errors),row_count=len(rows))
+            payload=json.dumps(rows,ensure_ascii=False); now=time.time(); expires=now+BULK_BATCH_TTL_SECONDS
+            d.execute('INSERT INTO bulk_import_batches(token,filename,row_count,payload,created_at,expires_at) VALUES(?,?,?,?,?,?)',(token,filename,len(rows),payload,now,expires)); d.commit()
+            return render_template('admin/question_import.html',token=token,preview=rows[:30],row_count=len(rows),filename=filename,expires_in_minutes=BULK_BATCH_TTL_SECONDS//60)
+        finally:
+            try: os.remove(path)
+            except OSError: pass
     except Exception as exc:
-        try: os.remove(path)
-        except OSError: pass
-        flash(f'ফাইল পড়তে সমস্যা হয়েছে: {exc}','error'); return redirect(url_for('admin_question_import'))
+        d.rollback(); flash(f'ফাইল পড়তে/Preview তৈরি করতে সমস্যা হয়েছে: {exc}','error'); return redirect(url_for('admin_question_import'))
+    finally: d.close()
 
 @app.route('/admin/questions/import/confirm/<token>',methods=['POST'])
 @admin_required
 def admin_question_import_confirm(token):
-    meta_path=os.path.join(BULK_IMPORT_DIR,token+'.json')
-    if not os.path.exists(meta_path): flash('Import preview-এর মেয়াদ শেষ হয়েছে। ফাইলটি আবার upload করুন।','error'); return redirect(url_for('admin_question_import'))
+    d=db()
     try:
-        with open(meta_path,encoding='utf-8') as f: meta=json.load(f)
-        rows=_read_bulk_file(meta['path']); errors=_validate_bulk_rows(rows)
+        batch=d.fetchone('SELECT * FROM bulk_import_batches WHERE token=? LIMIT 1',(token,))
+        if not batch or float(batch['expires_at'])<time.time():
+            if batch: d.execute('DELETE FROM bulk_import_batches WHERE id=?',(batch['id'],)); d.commit()
+            flash('Import preview-এর মেয়াদ শেষ হয়েছে। ফাইলটি আবার upload করুন।','error'); return redirect(url_for('admin_question_import'))
+        rows=_decode_bulk_payload(batch['payload']); errors=_validate_bulk_rows(rows)
         if errors: raise ValueError('Import validation ব্যর্থ হয়েছে: '+' | '.join(errors[:5]))
-        d=db()
-        try:
-            result=_import_bulk_rows(d,rows); d.commit()
-        except Exception: d.rollback(); raise
-        finally: d.close()
-        for p in (meta['path'],meta_path):
-            try: os.remove(p)
-            except OSError: pass
+        result=_import_bulk_rows(d,rows); d.commit()
+        d.execute('DELETE FROM bulk_import_batches WHERE id=?',(batch['id'],)); d.commit()
         flash(f'Bulk import সফল: নতুন প্রশ্ন {result[0]}, আগে থাকা প্রশ্ন {result[1]}, নতুন Quiz {result[2]}, Quiz-এ যুক্ত প্রশ্ন {result[3]}।','ok')
         return redirect(url_for('admin_questions'))
-    except Exception as exc: flash(f'Import ব্যর্থ হয়েছে: {exc}','error'); return redirect(url_for('admin_question_import'))
+    except Exception as exc:
+        d.rollback(); flash(f'Import ব্যর্থ হয়েছে: {exc}','error'); return redirect(url_for('admin_question_import'))
+    finally: d.close()
 
 @app.route('/admin/questions/import-template')
 @admin_required
 def admin_question_import_template():
     if Workbook is None: flash('Excel template তৈরি করতে openpyxl প্রয়োজন।','error'); return redirect(url_for('admin_question_import'))
-    wb=Workbook(); ws=wb.active; ws.title='Questions'; ws.append(BULK_HEADERS); ws.append(['9','বিজ্ঞান','অধ্যায় ৫','অধ্যায় ৫ অনুশীলনী','অধ্যায় ৫-এর MCQ Quiz','No','15','উদাহরণ প্রশ্ন লিখুন','Option A','Option B','Option C','Option D','B','সঠিক উত্তরটি কেন সঠিক—ব্যাখ্যা','medium','1'])
-    for cell in ws[1]: cell.font=cell.font.copy(bold=True)
-    widths=[12,18,24,28,32,16,14,45,25,25,25,25,18,40,14,10]
-    for i,width in enumerate(widths,1): ws.column_dimensions[chr(64+i)].width=width
+    from openpyxl.styles import Font,PatternFill,Alignment
+    from openpyxl.worksheet.datavalidation import DataValidation
+    wb=Workbook(); ws=wb.active; ws.title='Questions'; ws.append(BULK_HEADERS)
+    for cell in ws[1]: cell.font=Font(bold=True); cell.fill=PatternFill('solid',fgColor='EDE9FE'); cell.alignment=Alignment(horizontal='center',vertical='center',wrap_text=True)
+    ws.freeze_panes='A2'; ws.auto_filter.ref='A1:P1'
+    widths=[12,20,28,30,40,16,14,50,24,24,24,24,18,42,14,10]
+    for i,w in enumerate(widths,1): ws.column_dimensions[chr(64+i)].width=w
+    dv1=DataValidation(type='list',formula1='"Yes,No"',allow_blank=True); ws.add_data_validation(dv1); dv1.add('F2:F12001')
+    dv2=DataValidation(type='list',formula1='"easy,medium,hard"',allow_blank=True); ws.add_data_validation(dv2); dv2.add('O2:O12001')
+    ex=wb.create_sheet('Examples'); ex.append(BULK_HEADERS)
+    for row in [
+        ['1','গণিত','সংখ্যা পরিচিতি','প্রাথমিক গণিত অনুশীলন','শ্রেণি ১ নমুনা Quiz','Yes','10','২ + ৩ = কত?','৪','৫','৬','৭','B','যোগফল ৫।','easy','1'],
+        ['6','বিজ্ঞান','অধ্যায় ১','বিজ্ঞান অনুশীলন','ষষ্ঠ শ্রেণির নমুনা Quiz','No','15','সৌরজগতের কেন্দ্র কোনটি?','চাঁদ','সূর্য','পৃথিবী','মঙ্গল','B','সূর্য কেন্দ্রীয় নক্ষত্র।','easy','1'],
+        ['12','পদার্থবিজ্ঞান','অধ্যায় ১','উচ্চ মাধ্যমিক নমুনা','শ্রেণি ১২ নমুনা Quiz','Yes','20','বেগের SI একক কী?','m','m/s','m/s²','N','B','বেগের SI একক মিটার/সেকেন্ড।','medium','1']]: ex.append(row)
+    for cell in ex[1]: cell.font=Font(bold=True); cell.fill=PatternFill('solid',fgColor='DBEAFE'); cell.alignment=Alignment(horizontal='center',wrap_text=True)
+    ex.freeze_panes='A2'; ex.auto_filter.ref='A1:P4'
+    for i,w in enumerate(widths,1): ex.column_dimensions[chr(64+i)].width=w
     info=wb.create_sheet('Instructions')
     for row in [
-        ['Bulk Question Import — নির্দেশনা'],
+        ['Bulk Question Import — v5.0'],
+        ['কোন sheet upload করবেন?','Questions sheet। Examples sheet শুধু format বোঝার জন্য।'],
         ['আবশ্যক কলাম','Class, Subject, Chapter, Question, Option A, Option B, Option C, Option D, Correct Answer'],
-        ['Correct Answer','A/B/C/D, 1/2/3/4 অথবা option-এর exact text লিখুন।'],
-        ['Difficulty','easy / medium / hard; খালি রাখলে medium হবে।'],
-        ['Marks','পূর্ণসংখ্যা; খালি রাখলে 1।'],
-        ['Quiz Title','দিলে import-এর সময় ওই Chapter-এর জন্য Quiz তৈরি/আপডেট হবে। খালি রাখলে শুধু Question Bank-এ প্রশ্ন যাবে।'],
+        ['Class','1–12; যেমন 1, 6, 12, Class 9, Grade 10, শ্রেণি ১২।'],
+        ['Correct Answer','A/B/C/D, 1/2/3/4 অথবা option-এর exact text।'],
+        ['Difficulty','easy / medium / hard; blank হলে medium।'],
+        ['Marks','পূর্ণসংখ্যা; blank হলে 1।'],
+        ['Quiz Title','দিলে সংশ্লিষ্ট Class + Subject + Chapter-এর Quiz তৈরি/পুনঃব্যবহার হবে।'],
         ['Quiz Published','Yes/No, True/False বা 1/0।'],
         ['Time Limit','মিনিটে; 0 মানে no limit।'],
-        ['Duplicate','একই Class + Chapter + Question আগে থাকলে duplicate question তৈরি না করে existing question reuse করা হবে।'],
-        ['Encoding','CSV হলে UTF-8 with BOM ব্যবহার করুন। Excel (.xlsx) বেশি সুবিধাজনক।']]: info.append(row)
-    info.column_dimensions['A'].width=28; info.column_dimensions['B'].width=110
+        ['Capacity','প্রতি Class-এ সর্বোচ্চ 1000 প্রশ্ন; 1–12 Class মিলিয়ে configured capacity 12000।'],
+        ['Preview','Preview data database-এ রাখা হয়; 60 মিনিটের মধ্যে Confirm করা যায়, server restart হলেও।'],
+        ['CSV','UTF-8 with BOM ব্যবহার করুন।'],
+    ]: info.append(row)
+    info.column_dimensions['A'].width=28; info.column_dimensions['B'].width=115
     out=os.path.join(BULK_IMPORT_DIR,'bulk_question_import_template.xlsx'); wb.save(out)
     from flask import send_file
     return send_file(out,as_attachment=True,download_name='bulk_question_import_template.xlsx',mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-
 
 @app.route('/admin/questions', methods=['GET', 'POST'])
 @admin_required
@@ -1502,6 +1609,22 @@ def admin_badge_delete(bid):
 def games():
     d=db()
     try: return render_template('games.html',games=d.fetchall(f'SELECT * FROM games WHERE active={BOOL_TRUE} ORDER BY display_order,title'))
+    finally: d.close()
+
+@app.route('/games/play/<slug>')
+def game_play(slug):
+    d=db()
+    try:
+        game=d.fetchone(f'SELECT * FROM games WHERE slug=? AND active={BOOL_TRUE} LIMIT 1',(slug,))
+        if not game:
+            flash('গেমটি বর্তমানে পাওয়া যাচ্ছে না।','error'); return redirect(url_for('games'))
+        if str(game['type'] or '').lower()!='builtin':
+            return redirect(game['launch_url']) if game['launch_url'] else redirect(url_for('games'))
+        config=game['config']
+        if isinstance(config,str):
+            try: config=json.loads(config)
+            except Exception: config={}
+        return render_template('game_play.html',game=game,game_config=config or {})
     finally: d.close()
 
 

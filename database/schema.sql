@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS site_settings(id BIGSERIAL PRIMARY KEY,site_name TEXT,tagline TEXT,purpose TEXT,about TEXT,hero_title TEXT,hero_subtitle TEXT,logo_url TEXT,hero_image_url TEXT,background_url TEXT,facebook_url TEXT);
-CREATE TABLE IF NOT EXISTS classes(id BIGSERIAL PRIMARY KEY,name TEXT NOT NULL,display_order INTEGER DEFAULT 0,active BOOLEAN DEFAULT TRUE);
+CREATE TABLE IF NOT EXISTS classes(id BIGSERIAL PRIMARY KEY,name TEXT NOT NULL,display_order INTEGER DEFAULT 0,active BOOLEAN DEFAULT TRUE,stage TEXT);
 CREATE TABLE IF NOT EXISTS subjects(id BIGSERIAL PRIMARY KEY,name TEXT NOT NULL,icon TEXT DEFAULT '📘',display_order INTEGER DEFAULT 0,active BOOLEAN DEFAULT TRUE);
 CREATE TABLE IF NOT EXISTS chapters(id BIGSERIAL PRIMARY KEY,subject_id BIGINT NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,class_id BIGINT REFERENCES classes(id),title TEXT NOT NULL,description TEXT,display_order INTEGER DEFAULT 0,active BOOLEAN DEFAULT TRUE);
 CREATE TABLE IF NOT EXISTS questions(id BIGSERIAL PRIMARY KEY,subject_id BIGINT REFERENCES subjects(id),chapter_id BIGINT REFERENCES chapters(id),class_id BIGINT REFERENCES classes(id),question_text TEXT NOT NULL,question_type TEXT DEFAULT 'mcq',explanation TEXT,difficulty TEXT DEFAULT 'medium',marks INTEGER DEFAULT 1,active BOOLEAN DEFAULT TRUE);
@@ -17,3 +17,6 @@ CREATE TABLE IF NOT EXISTS admin_users(id BIGSERIAL PRIMARY KEY,username TEXT UN
 
 CREATE TABLE IF NOT EXISTS media_assets(id BIGSERIAL PRIMARY KEY,title TEXT NOT NULL,slot TEXT DEFAULT 'gallery',url TEXT NOT NULL,alt_text TEXT,active BOOLEAN DEFAULT TRUE,created_at TIMESTAMPTZ DEFAULT NOW());
 CREATE INDEX IF NOT EXISTS idx_media_assets_slot_active ON media_assets(slot,active);
+
+CREATE TABLE IF NOT EXISTS bulk_import_batches(id BIGSERIAL PRIMARY KEY,token TEXT UNIQUE NOT NULL,filename TEXT,row_count INTEGER NOT NULL,payload JSONB NOT NULL,created_at DOUBLE PRECISION DEFAULT EXTRACT(EPOCH FROM NOW()),expires_at DOUBLE PRECISION NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_bulk_import_batches_expires ON bulk_import_batches(expires_at);

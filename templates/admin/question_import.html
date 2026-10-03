@@ -10,20 +10,20 @@
   <div class="grid two-col">
     <div class="card section-card">
       <h2>১. ফাইল প্রস্তুত করুন</h2>
-      <p>ZIP-এর <b>bulk_question_import_template.xlsx</b> অথবা এই পেজের Template ব্যবহার করুন।</p>
+      <p>ZIP-এর <b>bulk_question_import_template.xlsx</b> অথবা এই পেজের Template ব্যবহার করুন। Questions sheet-এ নিজের data দিন; Examples sheet শুধু format বোঝার জন্য।</p>
       <ul>
         <li>আবশ্যক: Class, Subject, Chapter, Question, Option A–D, Correct Answer</li>
         <li>Difficulty: easy / medium / hard</li>
         <li>Marks খালি রাখলে 1 হবে</li>
         <li>Quiz Title দিলে একই import-এর প্রশ্নগুলো দিয়ে Quiz তৈরি হবে</li>
-        <li>Correct Answer: A/B/C/D অথবা 1/2/3/4</li>
+        <li>Correct Answer: A/B/C/D, 1/2/3/4 অথবা option-এর exact text</li><li>Class: 1 থেকে 12 (যেমন 1, Class 9, Grade 10, শ্রেণি ১২)</li><li>একবারে সর্বোচ্চ 12000 data row</li>
       </ul>
     </div>
     <div class="card section-card">
       <h2>২. ফাইল Upload করুন</h2>
       <form method="post" enctype="multipart/form-data">
         <label>Excel / CSV ফাইল<input type="file" name="file" accept=".xlsx,.csv" required></label>
-        <p class="muted">প্রথমে Preview হবে। Preview ঠিক থাকলে তারপর Import confirm করতে হবে।</p>
+        <p class="muted">প্রথমে Validate & Preview হবে। Preview database-এ সাময়িকভাবে থাকে, তাই server restart হলেও 60 মিনিটের মধ্যে Confirm করা যাবে।</p>
         <button class="btn primary" type="submit">🔎 Validate & Preview</button>
       </form>
     </div>

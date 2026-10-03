@@ -13,10 +13,18 @@ DECLARE
     cid BIGINT; sid BIGINT; chid BIGINT; qid BIGINT; qzid BIGINT;
     cls_no INT; subj TEXT; title TEXT; total INT; ids BIGINT[]; subids BIGINT[]; qrow RECORD;
 BEGIN
-    -- Ensure the standard Class 6-10 and six subject rows exist.
-    FOR cls_no IN 6..10 LOOP
+    -- Ensure the standard Class 1-12 and six subject rows exist.
+    FOR cls_no IN 1..12 LOOP
         SELECT id INTO cid FROM public.classes WHERE name=('শ্রেণি '||cls_no) LIMIT 1;
-        IF cid IS NULL THEN INSERT INTO public.classes(name,display_order) VALUES ('শ্রেণি '||cls_no, cls_no-5) RETURNING id INTO cid; END IF;
+        IF cid IS NULL THEN
+            INSERT INTO public.classes(name,display_order,stage)
+            VALUES ('শ্রেণি '||cls_no, cls_no,
+                    CASE WHEN cls_no <= 5 THEN 'প্রাথমিক'
+                         WHEN cls_no <= 8 THEN 'নিম্ন মাধ্যমিক'
+                         WHEN cls_no <= 10 THEN 'মাধ্যমিক'
+                         ELSE 'উচ্চ মাধ্যমিক' END)
+            RETURNING id INTO cid;
+        END IF;
     END LOOP;
     FOREACH subj IN ARRAY ARRAY['বাংলা','ইংরেজি','গণিত','বিজ্ঞান','বাংলাদেশ ও বিশ্বপরিচয়','সাধারণ জ্ঞান'] LOOP
         SELECT id INTO sid FROM public.subjects WHERE name=subj LIMIT 1;
@@ -42,8 +50,8 @@ BEGIN
         END IF;
     END LOOP;
 
-    -- Create one published subject quiz for each Class 6-10 / Subject pair.
-    FOR cls_no IN 6..10 LOOP
+    -- Create one published subject quiz for each Class 1-12 / Subject pair.
+    FOR cls_no IN 1..12 LOOP
         SELECT id INTO cid FROM public.classes WHERE name=('শ্রেণি '||cls_no) LIMIT 1;
         FOREACH subj IN ARRAY ARRAY['বাংলা','ইংরেজি','গণিত','বিজ্ঞান','বাংলাদেশ ও বিশ্বপরিচয়','সাধারণ জ্ঞান'] LOOP
             SELECT id INTO sid FROM public.subjects WHERE name=subj LIMIT 1;
@@ -64,7 +72,7 @@ BEGIN
 END $$;
 
 
--- Create one published mixed-subject challenge for each Class 6-10.
+-- Create one published mixed-subject challenge for each Class 1-12 (when questions exist).
 DO $$
 DECLARE
     cid BIGINT;
@@ -78,7 +86,7 @@ DECLARE
     qzid BIGINT;
     qrow RECORD;
 BEGIN
-    FOR cls_no IN 6..10 LOOP
+    FOR cls_no IN 1..12 LOOP
         SELECT id INTO cid
         FROM public.classes
         WHERE name=('শ্রেণি '||cls_no)
