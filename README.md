@@ -1,9 +1,9 @@
-# Practice with Zara Sara — v5.0
+# Practice with Zara Sara — v5.1
 
 ## মূল আপডেট
 - Class 1–12 support, stage label সহ।
 - Student Registration ও Practice Class Class 1–12।
-- প্রতি Class 1000 প্রশ্ন capacity; configured total 12000।
+- প্রতি Class 10000 প্রশ্ন capacity; মোট capacity database অনুযায়ী বাড়ানো যাবে।
 - 5টি starter built-in Educational Game: দ্রুত গণিত, সংখ্যা রহস্য, স্মৃতি মিল, শব্দ সাজাও, দ্রুত সাধারণ জ্ঞান।
 - Future external game যোগের জন্য Admin → Games workflow রাখা হয়েছে।
 - Home, Student Dashboard ও Game Zone-এ games access।
@@ -21,3 +21,11 @@ Python 3.13 ব্যবহার করে `python app.py` চালান। L
 
 ## Supabase
 Existing database drop/recreate করার দরকার নেই। App run করলে incremental schema upgrade হবে।
+
+
+## v5.1 updates
+- Student practice access সীমিত: Registered Class, তার এক ধাপ নিচে এবং এক ধাপ উপরে।
+- Digital Student ID Card with QR verification।
+- One active device/session per student account। নতুন device-এ নিতে Student ID + Password + Recovery PIN প্রয়োজন।
+- Existing bulk import, quiz, games এবং admin workflows retained।
+- Payment/subscription gateway এই version-এ যুক্ত করা হয়নি।
