@@ -1,1 +1,51 @@
-<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{% block title %}{{ settings.site_name if settings else 'প্র্যাকটিস উইথ জারা-সারা' }}{% endblock %}</title><meta name="description" content="স্কুলগোয়িং শিক্ষার্থী থেকে দ্বাদশ শ্রেণি পর্যন্ত অনুশীলন, Quiz, XP, Badge ও শিক্ষামূলক গেম প্ল্যাটফর্ম"><link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}"></head><body><header><div class="wrap nav"><a class="brand" href="{{ url_for('home') }}">{{ '🌸 ' }}{{ settings.site_name if settings else 'জারা-সারা' }}</a><nav><a href="{{ url_for('home') }}">হোম</a><a href="{{ url_for('games') }}">🎮 গেমস</a>{% if session.get('student_id') %}<a href="{{ url_for('student') }}">আমার ড্যাশবোর্ড</a><a href="{{ url_for('logout') }}">লগআউট</a>{% else %}<a href="{{ url_for('login') }}">শিক্ষার্থী লগইন</a><a href="{{ url_for('register') }}">নিবন্ধন</a>{% endif %}<a href="{{ url_for('admin_login') }}">Admin</a></nav></div></header><main>{% with msgs=get_flashed_messages(with_categories=true) %}{% if msgs %}<div class="wrap flashes">{% for cat,msg in msgs %}<div class="flash {{cat}}">{{msg}}</div>{% endfor %}</div>{% endif %}{% endwith %}{% block content %}{% endblock %}</main><footer><div class="wrap">© 2026 {{ settings.site_name if settings else 'প্র্যাকটিস উইথ জারা-সারা' }} · শেখা হোক আনন্দের</div></footer></body></html>
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}{{ settings.site_name if settings else 'প্র্যাকটিস উইথ জারা-সারা' }}{% endblock %}</title>
+<meta name="description" content="শ্রেণি ১–১২ অনুশীলন, Quiz, XP, Badge, শিক্ষামূলক গেম ও ৩D পৃথিবী আবিষ্কার — এক প্ল্যাটফর্মে">
+<meta name="theme-color" content="#6d28d9">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static',filename='css/home.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="{{ url_for('home') }}"><span class="brand-mark">🌸</span><span>{{ settings.site_name if settings else 'জারা-সারা' }}</span></a>
+    <button class="nav-toggle" id="navToggle" aria-label="মেনু" aria-expanded="false"><span></span><span></span><span></span></button>
+    <nav id="mainNav">
+      <a href="{{ url_for('home') }}">হোম</a>
+      <a href="{{ url_for('explore') }}">🌍 পৃথিবী আবিষ্কার</a>
+      <a href="{{ url_for('games') }}">🎮 গেমস</a>
+      {% if session.get('student_id') %}
+        <a href="{{ url_for('student') }}">আমার ড্যাশবোর্ড</a>
+        <a href="{{ url_for('logout') }}">লগআউট</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">লগইন</a>
+        <a class="nav-cta" href="{{ url_for('register') }}">নিবন্ধন</a>
+      {% endif %}
+      <a class="nav-admin" href="{{ url_for('admin_login') }}">Admin</a>
+    </nav>
+  </div>
+</header>
+<main>
+{% with msgs=get_flashed_messages(with_categories=true) %}{% if msgs %}<div class="wrap flashes">{% for cat,msg in msgs %}<div class="flash {{cat}}">{{msg}}</div>{% endfor %}</div>{% endif %}{% endwith %}
+{% block content %}{% endblock %}
+</main>
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div><b>🌸 {{ settings.site_name if settings else 'প্র্যাকটিস উইথ জারা-সারা' }}</b><p>শেখা হোক আনন্দের, অনুশীলন হোক নিয়মিত।</p></div>
+    <div class="footer-links"><a href="{{ url_for('home') }}">হোম</a><a href="{{ url_for('explore') }}">পৃথিবী আবিষ্কার</a><a href="{{ url_for('games') }}">গেমস</a><a href="{{ url_for('register') }}">নিবন্ধন</a></div>
+  </div>
+  <div class="wrap footer-copy">© 2026 {{ settings.site_name if settings else 'প্র্যাকটিস উইথ জারা-সারা' }}</div>
+</footer>
+<script>
+(function(){var b=document.getElementById('navToggle'),n=document.getElementById('mainNav');if(!b)return;b.addEventListener('click',function(){var o=n.classList.toggle('open');b.setAttribute('aria-expanded',o?'true':'false');});})();
+</script>
+</body>
+</html>

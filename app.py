@@ -18,14 +18,9 @@ try:
 except ImportError:
     psycopg2 = None
 
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, make_response
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-
-try:
-    import qrcode
-except ImportError:
-    qrcode = None
 
 try:
     from openpyxl import load_workbook, Workbook
@@ -38,11 +33,15 @@ BASE = os.path.dirname(__file__)
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'change-this-secret-in-production')
 app.config['MAX_CONTENT_LENGTH'] = 25 * 1024 * 1024
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+if os.environ.get('SESSION_COOKIE_SECURE') == '1':
+    app.config['SESSION_COOKIE_SECURE'] = True
 DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
 SQLITE_PATH = os.environ.get('SQLITE_PATH', os.path.join(BASE, 'zara_sara.db'))
 USE_PG = bool(DATABASE_URL)
 BOOL_TRUE = 'TRUE' if USE_PG else '1'
-MAX_QUESTIONS_PER_CLASS = 10000
+MAX_QUESTIONS_PER_CLASS = 1000
 TOTAL_CLASS_COUNT = 12
 MAX_BULK_IMPORT_ROWS = 12000
 BULK_BATCH_TTL_SECONDS = 60 * 60
@@ -140,9 +139,6 @@ def ensure_schema_upgrades(d):
         d.execute('ALTER TABLE students ADD COLUMN IF NOT EXISTS recovery_pin_hash TEXT')
         d.execute('ALTER TABLE students ADD COLUMN IF NOT EXISTS practice_class_id BIGINT REFERENCES classes(id)')
         d.execute('ALTER TABLE students ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW()')
-        d.execute('ALTER TABLE students ADD COLUMN IF NOT EXISTS active_device_token TEXT')
-        d.execute('ALTER TABLE students ADD COLUMN IF NOT EXISTS active_session_token TEXT')
-        d.execute('ALTER TABLE students ADD COLUMN IF NOT EXISTS active_device_seen_at TIMESTAMPTZ')
         d.execute('ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS chapter_id BIGINT REFERENCES chapters(id)')
         d.execute('ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS question_count INTEGER DEFAULT 0')
         d.execute('ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS max_question_count INTEGER DEFAULT 50')
@@ -161,9 +157,6 @@ def ensure_schema_upgrades(d):
         _add_column_if_missing(d, 'students', 'recovery_pin_hash', 'TEXT')
         _add_column_if_missing(d, 'students', 'practice_class_id', 'INTEGER REFERENCES classes(id)')
         _add_column_if_missing(d, 'students', 'updated_at', 'TEXT')
-        _add_column_if_missing(d, 'students', 'active_device_token', 'TEXT')
-        _add_column_if_missing(d, 'students', 'active_session_token', 'TEXT')
-        _add_column_if_missing(d, 'students', 'active_device_seen_at', 'TEXT')
         _add_column_if_missing(d, 'quizzes', 'chapter_id', 'INTEGER REFERENCES chapters(id)')
         _add_column_if_missing(d, 'quizzes', 'question_count', 'INTEGER DEFAULT 0')
         _add_column_if_missing(d, 'quizzes', 'max_question_count', 'INTEGER DEFAULT 50')
@@ -178,7 +171,6 @@ def ensure_schema_upgrades(d):
     d.execute('CREATE INDEX IF NOT EXISTS idx_quizzes_class_subject_chapter ON quizzes(class_id, subject_id, chapter_id)')
     d.execute('CREATE INDEX IF NOT EXISTS idx_quiz_questions_question ON quiz_questions(question_id)')
     d.execute('CREATE INDEX IF NOT EXISTS idx_students_practice_class ON students(practice_class_id)')
-    d.execute('CREATE INDEX IF NOT EXISTS idx_students_active_device ON students(active_device_token)')
     d.execute('CREATE INDEX IF NOT EXISTS idx_classes_order ON classes(display_order,active)')
     if d.pg:
         d.execute('CREATE TABLE IF NOT EXISTS quiz_attempt_questions(attempt_id BIGINT NOT NULL REFERENCES quiz_attempts(id) ON DELETE CASCADE,question_id BIGINT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,display_order INTEGER NOT NULL,PRIMARY KEY(attempt_id,display_order))')
@@ -209,9 +201,8 @@ def _ensure_class_catalog(d):
         row=d.fetchone('SELECT id,stage FROM classes WHERE lower(name)=lower(?) LIMIT 1',(name,))
         if not row:
             d.execute('INSERT INTO classes(name,display_order,active,stage) VALUES(?,?,?,?)',(name,i,True,stage))
-        else:
-            # Keep the canonical 1–12 ordering even when upgrading an older database.
-            d.execute('UPDATE classes SET display_order=?, stage=? WHERE id=?', (i, stage, row['id']))
+        elif not row['stage']:
+            d.execute('UPDATE classes SET stage=? WHERE id=?',(stage,row['id']))
 
 
 def init_db():
@@ -355,23 +346,8 @@ def admin_required(f):
 def student_required(f):
     @wraps(f)
     def w(*a, **kw):
-        student_id = session.get('student_id')
-        session_token = session.get('student_session_token')
-        device_token = request.cookies.get('zs_device_token')
-        if not student_id or not session_token or not device_token:
-            session.clear()
+        if not session.get('student_id'):
             return redirect(url_for('login'))
-        d = db()
-        try:
-            s = d.fetchone('SELECT id, active, active_device_token, active_session_token FROM students WHERE id=?', (student_id,))
-            if not s or not s['active'] or s['active_device_token'] != device_token or s['active_session_token'] != session_token:
-                session.clear()
-                flash('এই Student account অন্য একটি ডিভাইসে সক্রিয় হয়েছে। আবার লগইন করুন।', 'error')
-                return redirect(url_for('login'))
-            d.execute('UPDATE students SET active_device_seen_at=?, updated_at=? WHERE id=?', (datetime.utcnow().isoformat(), datetime.utcnow().isoformat(), student_id))
-            d.commit()
-        finally:
-            d.close()
         return f(*a, **kw)
     return w
 
@@ -491,12 +467,26 @@ def home():
             f'''SELECT * FROM media_assets WHERE active={BOOL_TRUE} AND slot='gallery'
                 ORDER BY id DESC LIMIT 8'''
         )
+        stats = {
+            'questions': d.fetchone('SELECT COUNT(*) AS n FROM questions')['n'],
+            'quizzes': d.fetchone(f'SELECT COUNT(*) AS n FROM quizzes WHERE published={BOOL_TRUE}')['n'],
+            'students': d.fetchone('SELECT COUNT(*) AS n FROM students')['n'],
+            'games': d.fetchone(f'SELECT COUNT(*) AS n FROM games WHERE active={BOOL_TRUE}')['n'],
+        }
         return render_template(
             'index.html', settings=settings, classes=classes, subjects=subjects,
-            notices=notices, gallery=gallery, games=d.fetchall(f'SELECT * FROM games WHERE active={BOOL_TRUE} ORDER BY display_order,title LIMIT 6'),
+            notices=notices, gallery=gallery, stats=stats,
+            games=d.fetchall(f'SELECT * FROM games WHERE active={BOOL_TRUE} ORDER BY display_order,title LIMIT 6'),
         )
     finally:
         d.close()
+
+
+@app.route('/explore')
+@app.route('/explore/')
+def explore():
+    """Earth Explorer — interactive 3D globe (static single-page app)."""
+    return app.send_static_file('explore/index.html')
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -583,155 +573,29 @@ def forgot_password():
     return render_template('forgot_password.html', reset_done=reset_done)
 
 
-def get_or_create_device_token():
-    token = request.cookies.get('zs_device_token')
-    if token and len(token) >= 32:
-        return token, False
-    return secrets.token_urlsafe(32), True
-
-
-def _class_number_from_name(name):
-    """Extract class number (1-12) from Bengali/English class labels such as 'শ্রেণি ৬' or 'Class 6'."""
-    if not name:
-        return None
-    text = str(name).strip().translate(str.maketrans('০১২৩৪৫৬৭৮৯', '0123456789'))
-    match = re.search(r'(?:^|\D)(1[0-2]|[1-9])(?:\D|$)', text)
-    return int(match.group(1)) if match else None
-
-
-def _student_allowed_class_ids(d, student_row):
-    """Return the student's registered class and its immediate neighbour classes only."""
-    if not student_row:
-        return []
-    base_id = student_row['class_id'] or student_row['practice_class_id']
-    if not base_id:
-        return []
-
-    base_row = d.fetchone('SELECT id,name,display_order,active FROM classes WHERE id=?', (base_id,))
-    if not base_row:
-        return []
-
-    base_no = _class_number_from_name(base_row['name'])
-    if base_no is None:
-        try:
-            candidate = int(base_row['display_order'])
-        except (TypeError, ValueError):
-            candidate = 0
-        base_no = candidate if 1 <= candidate <= TOTAL_CLASS_COUNT else None
-    if base_no is None:
-        return [int(base_id)] if bool(base_row['active']) else []
-
-    # Legacy databases can have inconsistent/duplicate display_order values.
-    # Resolve access by the actual class number encoded in the class name, not by order.
-    rows = d.fetchall(f'SELECT id,name,display_order FROM classes WHERE active={BOOL_TRUE} ORDER BY id')
-    by_no = {}
-    for row in rows:
-        no = _class_number_from_name(row['name'])
-        if no is None:
-            try:
-                candidate = int(row['display_order'])
-            except (TypeError, ValueError):
-                candidate = 0
-            no = candidate if 1 <= candidate <= TOTAL_CLASS_COUNT else None
-        if no is not None and no not in by_no:
-            by_no[no] = int(row['id'])
-
-    # Preserve the exact registered class record as the middle class.
-    by_no[base_no] = int(base_id)
-    first = max(1, base_no - 1)
-    last = min(TOTAL_CLASS_COUNT, base_no + 1)
-    return [by_no[n] for n in range(first, last + 1) if n in by_no]
-
-
-def student_id_card_qr(student_id):
-    if qrcode is None:
-        return ''
-    verify_url = url_for('verify_student', username=student_id, _external=True)
-    qr = qrcode.QRCode(version=1, box_size=8, border=3)
-    qr.add_data(verify_url)
-    qr.make(fit=True)
-    img = qr.make_image()
-    import io, base64
-    buf = io.BytesIO()
-    img.save(buf, format='PNG')
-    return 'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode('ascii')
-
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    device_conflict = False
-    attempted_username = ''
     if request.method == 'POST':
-        attempted_username = request.form.get('username', '').strip()
-        password = request.form.get('password', '')
         d = db()
         try:
-            s = d.fetchone(f'SELECT * FROM students WHERE username=? AND active={BOOL_TRUE}', (attempted_username,))
-            if s and check_password_hash(s['password_hash'], password):
-                device_token, is_new_cookie = get_or_create_device_token()
-                if s['active_device_token'] and s['active_device_token'] != device_token:
-                    device_conflict = True
-                    flash('এই account ইতোমধ্যে অন্য একটি ডিভাইসে সক্রিয় আছে। নতুন ডিভাইসে নিতে Student ID, Password ও Recovery PIN দিয়ে নিশ্চিত করুন।', 'error')
-                else:
-                    session.clear()
-                    session_token = secrets.token_urlsafe(32)
-                    session['student_id'] = s['id']
-                    session['student_session_token'] = session_token
-                    d.execute('UPDATE students SET active_device_token=?, active_session_token=?, active_device_seen_at=?, updated_at=? WHERE id=?', (device_token, session_token, datetime.utcnow().isoformat(), datetime.utcnow().isoformat(), s['id']))
-                    d.commit()
-                    response = make_response(redirect(url_for('student')))
-                    if is_new_cookie:
-                        response.set_cookie('zs_device_token', device_token, max_age=60*60*24*365, httponly=True, samesite='Lax', secure=request.is_secure)
-                    return response
-            else:
-                flash('Student ID বা Password সঠিক নয়।', 'error')
+            s = d.fetchone(
+                f'SELECT * FROM students WHERE username=? AND active={BOOL_TRUE}',
+                (request.form.get('username', '').strip(),),
+            )
         finally:
             d.close()
-    return render_template('login.html', device_conflict=device_conflict, attempted_username=attempted_username)
-
-
-@app.route('/login/switch-device', methods=['POST'])
-def switch_device():
-    username = request.form.get('username', '').strip()
-    password = request.form.get('password', '')
-    recovery_pin = request.form.get('recovery_pin', '').strip()
-    d = db()
-    try:
-        s = d.fetchone(f'SELECT * FROM students WHERE username=? AND active={BOOL_TRUE}', (username,))
-        if not s or not check_password_hash(s['password_hash'], password) or not s['recovery_pin_hash'] or not check_password_hash(s['recovery_pin_hash'], recovery_pin):
-            flash('Student ID, Password বা Recovery PIN সঠিক নয়। পুরোনো ডিভাইসের session নিরাপদ রাখতে তিনটিই সঠিক হতে হবে।', 'error')
-            return render_template('login.html', device_conflict=True, attempted_username=username)
-        device_token, is_new_cookie = get_or_create_device_token()
-        session.clear()
-        session_token = secrets.token_urlsafe(32)
-        session['student_id'] = s['id']
-        session['student_session_token'] = session_token
-        d.execute('UPDATE students SET active_device_token=?, active_session_token=?, active_device_seen_at=?, updated_at=? WHERE id=?', (device_token, session_token, datetime.utcnow().isoformat(), datetime.utcnow().isoformat(), s['id']))
-        d.commit()
-        flash('এই ডিভাইসে account চালু হয়েছে। আগের ডিভাইসটি স্বয়ংক্রিয়ভাবে লগআউট হয়েছে।', 'ok')
-        response = make_response(redirect(url_for('student')))
-        if is_new_cookie:
-            response.set_cookie('zs_device_token', device_token, max_age=60*60*24*365, httponly=True, samesite='Lax', secure=request.is_secure)
-        return response
-    finally:
-        d.close()
+        if s and check_password_hash(s['password_hash'], request.form.get('password', '')):
+            session.clear()
+            session['student_id'] = s['id']
+            return redirect(url_for('student'))
+        flash('ইউজারনেম বা পাসওয়ার্ড সঠিক নয়।', 'error')
+    return render_template('login.html')
 
 
 @app.route('/logout')
 def logout():
-    student_id = session.get('student_id')
-    token = session.get('student_session_token')
-    if student_id and token:
-        d = db()
-        try:
-            d.execute('UPDATE students SET active_session_token=NULL, active_device_token=NULL, updated_at=? WHERE id=? AND active_session_token=?', (datetime.utcnow().isoformat(), student_id, token))
-            d.commit()
-        finally:
-            d.close()
     session.clear()
-    response = make_response(redirect(url_for('home')))
-    response.delete_cookie('zs_device_token')
-    return response
+    return redirect(url_for('home'))
 
 
 @app.route('/student', methods=['GET'])
@@ -752,7 +616,6 @@ def student():
             return redirect(url_for('login'))
 
         practice_class_id = s['practice_class_id'] or s['class_id']
-        allowed_class_ids = _student_allowed_class_ids(d, s)
         subject_id = request.args.get('subject_id') or ''
         chapter_id = request.args.get('chapter_id') or ''
         badges = d.fetchall(
@@ -762,21 +625,21 @@ def student():
         )
         subjects = d.fetchall(f'SELECT * FROM subjects WHERE active={BOOL_TRUE} ORDER BY display_order,name')
         chapters = []
-        if allowed_class_ids:
+        if practice_class_id:
             if subject_id and subject_id.isdigit():
                 chapters = d.fetchall(
                     f'''SELECT * FROM chapters WHERE active={BOOL_TRUE} AND subject_id=?
-                       AND (class_id IS NULL OR class_id IN ({','.join(['?'] * len(allowed_class_ids))})) ORDER BY display_order,title''',
-                    (int(subject_id), *allowed_class_ids),
+                       AND (class_id=? OR class_id IS NULL) ORDER BY display_order,title''',
+                    (int(subject_id), practice_class_id),
                 )
             else:
                 chapters = d.fetchall(
-                    f'''SELECT * FROM chapters WHERE active={BOOL_TRUE} AND (class_id IS NULL OR class_id IN ({','.join(['?'] * len(allowed_class_ids))}))
+                    f'''SELECT * FROM chapters WHERE active={BOOL_TRUE} AND (class_id=? OR class_id IS NULL)
                        ORDER BY subject_id,display_order,title''',
-                    tuple(allowed_class_ids),
+                    (practice_class_id,),
                 )
-        q_where = [f"q.published={BOOL_TRUE} AND (q.class_id IS NULL OR q.class_id IN ({','.join(['?'] * len(allowed_class_ids))}))"]
-        q_params = list(allowed_class_ids)
+        q_where = [f'q.published={BOOL_TRUE} AND (q.class_id IS NULL OR q.class_id=?)']
+        q_params = [practice_class_id]
         if subject_id and subject_id.isdigit():
             q_where.append('q.subject_id=?'); q_params.append(int(subject_id))
         if chapter_id and chapter_id.isdigit():
@@ -801,9 +664,7 @@ def student():
             'student.html', student=s, badges=badges, quizzes=quizzes, attempts=attempts, subjects=subjects,
             chapters=chapters, selected_subject=subject_id, selected_chapter=chapter_id,
             practice_class_id=practice_class_id,
-            practice_classes=d.fetchall(f"SELECT * FROM classes WHERE active={BOOL_TRUE} AND id IN ({','.join(['?'] * len(allowed_class_ids))}) ORDER BY display_order,name", tuple(allowed_class_ids)) if allowed_class_ids else [],
-            allowed_class_ids=allowed_class_ids,
-            qr_data=student_id_card_qr(s['username']),
+            practice_classes=d.fetchall(f'SELECT * FROM classes WHERE active={BOOL_TRUE} ORDER BY display_order'),
             games=d.fetchall(f'SELECT * FROM games WHERE active={BOOL_TRUE} ORDER BY display_order,title LIMIT 6'),
             notices=notices,
         )
@@ -820,11 +681,7 @@ def student_practice_class():
         if not class_id or not str(class_id).isdigit():
             flash('Practice Class নির্বাচন করুন।', 'error')
         else:
-            student_row = d.fetchone('SELECT * FROM students WHERE id=?', (session['student_id'],))
-            allowed_ids = _student_allowed_class_ids(d, student_row) if student_row else []
             c = d.fetchone(f'SELECT id,name FROM classes WHERE id=? AND active={BOOL_TRUE}', (int(class_id),))
-            if c and int(c['id']) not in allowed_ids:
-                c = None
             if not c:
                 flash('নির্বাচিত Practice Class পাওয়া যায়নি।', 'error')
             else:
@@ -833,30 +690,6 @@ def student_practice_class():
     finally:
         d.close()
     return redirect(url_for('student'))
-
-
-@app.route('/student/id-card')
-@student_required
-def student_id_card():
-    d = db()
-    try:
-        s = d.fetchone('SELECT s.*, c.name class_name FROM students s LEFT JOIN classes c ON c.id=s.class_id WHERE s.id=?', (session['student_id'],))
-        if not s or not s['active']:
-            session.clear(); return redirect(url_for('login'))
-        qr_data = student_id_card_qr(s['username'])
-        return render_template('student_id_card.html', student=s, qr_data=qr_data)
-    finally:
-        d.close()
-
-
-@app.route('/verify/student/<username>')
-def verify_student(username):
-    d = db()
-    try:
-        s = d.fetchone('SELECT s.username,s.display_name,s.active,s.created_at,c.name class_name FROM students s LEFT JOIN classes c ON c.id=s.class_id WHERE s.username=?', (username,))
-        return render_template('student_verify.html', student=s)
-    finally:
-        d.close()
 
 
 @app.route('/student/password', methods=['GET', 'POST'])
@@ -940,9 +773,8 @@ def quiz(qid):
         qz=d.fetchone(f'''SELECT q.*,c.name class_name,sub.name subject_name,ch.title chapter_name FROM quizzes q LEFT JOIN classes c ON c.id=q.class_id LEFT JOIN subjects sub ON sub.id=q.subject_id LEFT JOIN chapters ch ON ch.id=q.chapter_id WHERE q.id=? AND q.published={BOOL_TRUE}''',(qid,))
         if not qz or not student_row: return redirect(url_for('student'))
         practice_class_id=student_row['practice_class_id'] or student_row['class_id']
-        allowed_class_ids = _student_allowed_class_ids(d, student_row)
-        if qz['class_id'] is not None and int(qz['class_id']) not in allowed_class_ids:
-            flash('এই Quizটি আপনার অনুমোদিত Class range-এর বাইরে।','error'); return redirect(url_for('student'))
+        if qz['class_id'] is not None and qz['class_id'] != practice_class_id:
+            flash('এই Quizটি বর্তমানে নির্বাচিত Practice Class-এর জন্য নয়।','error'); return redirect(url_for('student'))
         pool=_quiz_pool(d,qid)
         if not pool:
             flash('এই কুইজে এখনো কোনো Active প্রশ্ন নেই।','error'); return redirect(url_for('student'))
@@ -1836,7 +1668,7 @@ def admin_question_edit(qid):
             else:
                 chapters=d.fetchall(f'SELECT * FROM chapters WHERE active={BOOL_TRUE} AND subject_id=? ORDER BY class_id,display_order,title',(q['subject_id'],))
         else: chapters=[]
-        chapter=d.fetchone('SELECT title FROM chapters WHERE id=?',(q['chapter_id'],)) if q['chapter_id'] else None; q['chapter_title']=chapter['title'] if chapter else ''
+        q=dict(q); chapter=d.fetchone('SELECT title FROM chapters WHERE id=?',(q['chapter_id'],)) if q['chapter_id'] else None; q['chapter_title']=chapter['title'] if chapter else ''
         return render_template('admin/question_edit.html',question=q,options=options,subjects=subjects,classes=classes,chapters=chapters)
     finally: d.close()
 
@@ -2174,4 +2006,4 @@ def health():
 
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=int(os.environ.get('PORT', 5000)), debug=True)
+    app.run(host=os.environ.get('HOST', '127.0.0.1'), port=int(os.environ.get('PORT', 5000)), debug=os.environ.get('FLASK_DEBUG') == '1')

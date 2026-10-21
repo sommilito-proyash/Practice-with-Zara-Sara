@@ -1,0 +1,1118 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Earth Explorer — পৃথিবী আবিষ্কার | প্র্যাকটিস উইথ জারা-সারা</title>
+<style>
+:root{--bg:#070b16;--panel:#0f1629;--panel2:#16203a;--line:#26345a;--txt:#e8eefc;--mute:#8fa0c8;--acc:#4fb3ff;--gold:#ffd54a;--ok:#3ddc84;--bad:#ff5d6c}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:"Noto Sans Bengali","Kalpurush","Segoe UI",system-ui,sans-serif;overflow:hidden}
+#app{display:grid;grid-template-columns:390px 1fr;height:100vh}
+#side{background:linear-gradient(180deg,var(--panel),#0b1122);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;z-index:5}
+#brand{padding:16px 18px 8px;display:flex;align-items:center;gap:10px}
+#brand h1{font-size:19px;margin:0}
+#brand small{color:var(--mute);display:block;font-size:12px}
+#logo{font-size:28px}
+#searchWrap{padding:6px 16px 10px;position:relative}
+#q{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);font-size:15px;outline:none}
+#q:focus{border-color:var(--acc)}
+#sugg{position:absolute;left:16px;right:16px;top:56px;background:#101a33;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:none;z-index:20;box-shadow:0 10px 30px #0008}
+#sugg div{padding:9px 14px;cursor:pointer;display:flex;gap:10px;align-items:center;font-size:14px}
+#sugg div:hover,#sugg div.on{background:#1c2a50}
+#sugg img{width:22px;height:15px;object-fit:cover;border-radius:2px}
+#tabs{display:flex;gap:6px;padding:0 16px 8px}
+#tabs button{flex:1;padding:9px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--mute);cursor:pointer;font:inherit;font-size:14px}
+#tabs button.on{background:var(--acc);color:#04111f;border-color:var(--acc);font-weight:700}
+#content{flex:1;overflow:auto;padding:4px 16px 18px;min-height:0}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.hero{display:flex;gap:14px;align-items:center}
+.hero img.flag{width:84px;border-radius:8px;box-shadow:0 4px 16px #0008}
+.hero h2{margin:0;font-size:22px}
+.hero .en{color:var(--mute);font-size:13px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:#0d1530;border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+.stat b{display:block;font-size:11px;color:var(--mute);font-weight:500;margin-bottom:2px}
+.stat span{font-size:14px}
+.row{margin-top:10px;font-size:14px;line-height:1.6}
+.row b{color:var(--mute);font-weight:500;font-size:12px;display:block}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{background:#12214a;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px;cursor:pointer}
+.chip:hover{border-color:var(--acc)}
+.btn{background:var(--acc);color:#04111f;border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer;font-size:14px}
+.btn.alt{background:var(--panel2);color:var(--txt);border:1px solid var(--line);font-weight:500}
+.btn:hover{filter:brightness(1.1)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.welcome{text-align:center;color:var(--mute);line-height:1.8;padding:14px 6px}
+.welcome big{font-size:44px;display:block}
+.qtext{font-size:17px;line-height:1.5;margin:8px 0 12px}
+.opt{display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border-radius:11px;border:1px solid var(--line);background:#0d1530;color:var(--txt);font:inherit;font-size:15px;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--acc)}
+.opt.ok{background:#12452b;border-color:var(--ok)}
+.opt.bad{background:#4a1a22;border-color:var(--bad)}
+.qhead{display:flex;justify-content:space-between;color:var(--mute);font-size:13px}
+.bar{height:6px;background:#0d1530;border-radius:9px;overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;background:var(--acc);transition:width .3s}
+.fb{margin:8px 0;font-size:15px;min-height:22px}
+.modes .btn{width:100%;margin-bottom:8px;text-align:left}
+.modes small{display:block;font-weight:400;opacity:.75}
+#globeWrap{position:relative;min-width:0;min-height:0}
+#globe{position:absolute;inset:0}
+#tools{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;gap:8px;z-index:4}
+#tools button,#tools select{background:#0f1629cc;backdrop-filter:blur(6px);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:inherit;font-size:13px;cursor:pointer}
+#tools button.on{border-color:var(--gold);color:var(--gold)}
+#legend{position:absolute;left:14px;bottom:14px;background:#0f1629cc;backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px;z-index:4;max-width:70%}
+#legend .lg{display:flex;flex-wrap:wrap;gap:4px 12px}
+#legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+#legend .grad{height:9px;width:200px;border-radius:5px;margin:4px 0}
+#hint{position:absolute;top:14px;left:14px;background:#0f1629cc;backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:12px;padding:8px 12px;font-size:13px;color:var(--mute);z-index:4}
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:100;transition:opacity .5s}
+#loading .spin{width:46px;height:46px;border:4px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.tip{font-family:inherit;background:#0b1224ee;border:1px solid #2c3d6c;border-radius:10px;padding:8px 11px;color:#e8eefc;font-size:13px;line-height:1.5}
+.tip img{width:26px;vertical-align:middle;margin-right:6px;border-radius:2px}
+.sec h4{margin:0 0 8px;font-size:15px}
+.intro{font-size:14px;line-height:1.75}
+.src{font-size:11px;color:var(--mute);margin-top:8px;line-height:1.6}
+.src a{color:var(--acc)}
+.muted{color:var(--mute);font-size:13px}
+.gal{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory}
+.gal figure{margin:0;flex:0 0 150px;scroll-snap-align:start;cursor:zoom-in}
+.gal img{width:150px;height:105px;object-fit:cover;border-radius:10px;display:block;background:#0d1530}
+.place{display:flex;gap:10px;padding:8px;border:1px solid var(--line);border-radius:12px;background:#0d1530;margin-bottom:8px;cursor:pointer;align-items:center}
+.place:hover,.place.on{border-color:var(--gold)}
+.place .th{width:64px;height:48px;border-radius:8px;object-fit:cover;flex:0 0 64px;background:#16203a;display:flex;align-items:center;justify-content:center;font-size:22px}
+.place b{font-size:14px}
+.place small{display:block;color:var(--mute);font-size:12px;line-height:1.4}
+.badge{display:inline-block;font-size:10px;padding:1px 7px;border-radius:99px;background:#3a1f4d;color:#ff9be6;margin-right:4px}
+.pd{margin:-2px 0 10px;padding:10px;border-left:3px solid var(--gold);background:#0b1328;border-radius:0 10px 10px 0;font-size:13px;line-height:1.7}
+.pd img{width:100%;border-radius:8px;margin-bottom:8px}
+#lb{position:fixed;inset:0;background:#000d;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:120;padding:16px;gap:10px;cursor:zoom-out}
+#lb img{max-width:96vw;max-height:78vh;border-radius:10px}
+#lbc{color:#cfd8f3;font-size:13px;max-width:800px;text-align:center}
+#mcard{position:absolute;left:12px;bottom:12px;width:min(340px,calc(100% - 70px));max-height:62%;overflow:auto;background:#0b1328f2;border:1px solid var(--line);border-radius:14px;padding:12px;font-size:13px;line-height:1.65;display:none;z-index:4}
+#mcard img{width:100%;max-height:150px;object-fit:cover;border-radius:8px;margin-bottom:8px}
+#mcard h4{margin:0 0 2px;font-size:16px;padding-right:22px}
+#mcard .x{position:absolute;right:8px;top:6px;background:none;border:0;color:var(--mute);font-size:16px;cursor:pointer;z-index:2}
+.adm.sel{stroke:#ffd54a;stroke-width:3}
+.pl{filter:drop-shadow(0 0 3px #000)}
+/* 2D modal */
+#modal{position:fixed;inset:0;background:#02060fcc;display:none;align-items:center;justify-content:center;z-index:50;padding:18px}
+#mbox{width:min(1100px,100%);height:min(760px,100%);background:#0b1328;border:1px solid var(--line);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 80px #000a}
+#mhead{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+#mhead img{width:36px;border-radius:4px}
+#mhead h3{margin:0;font-size:18px}
+#mstat{color:var(--mute);font-size:13px;flex:1;min-width:140px}
+#mhead .btn{padding:7px 12px;font-size:13px}
+#mhead .btn.on{background:var(--gold)}
+#mapArea{position:relative;flex:1;min-height:0;background:radial-gradient(circle at 50% 40%,#12234a,#08101f)}
+#map2d{width:100%;height:100%;display:block;cursor:grab}
+#map2d:active{cursor:grabbing}
+#mz{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px}
+#mz button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:#0f1629dd;color:var(--txt);font-size:18px;cursor:pointer}
+#mdiag{position:absolute;right:12px;top:12px;width:min(560px,calc(100% - 80px));max-height:70%;overflow:auto;background:#0b1328f5;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px;z-index:6}
+#mdiag.err{border-color:#ff5d6c}#mdiag.warn{border-color:#ffb703}
+#mdiag summary{cursor:pointer;font-weight:700}
+#mdiag pre{white-space:pre-wrap;word-break:break-word;user-select:text;margin:8px 0;font-size:11.5px;line-height:1.5;color:#cfe0ff}
+#mtip{position:absolute;pointer-events:none;background:#0b1224f0;border:1px solid #2c3d6c;border-radius:8px;padding:5px 9px;font-size:13px;display:none;z-index:3}
+.adm{stroke:#fff;stroke-width:.7;vector-effect:non-scaling-stroke;transition:fill-opacity .15s}
+.lbl{pointer-events:none;fill:#08101f;paint-order:stroke;stroke:#ffffffd0;stroke-width:3px;stroke-linejoin:round;text-anchor:middle;font-weight:600}
+@media (max-width:820px){
+ #app{grid-template-columns:1fr;grid-template-rows:50vh 1fr}
+ #side{order:2;border-right:0;border-top:1px solid var(--line)}
+ #globeWrap{order:1}
+ #hint{display:none}
+ #legend{max-width:62%}
+ #tools{top:8px;right:8px}
+}
+</style>
+</head>
+<body>
+<div id="loading"><div class="spin"></div><div>পৃথিবী লোড হচ্ছে… 🌍</div><small id="loadmsg" style="color:var(--mute)"></small></div>
+
+<div id="app">
+  <aside id="side">
+    <div id="brand"><a href="/" title="হোমে ফিরি" style="text-decoration:none;font-size:22px;margin-right:2px">←</a><span id="logo">🌍</span><div><h1>Earth Explorer</h1><small>ঘোরাও · ক্লিক করো · শেখো</small></div></div>
+    <div id="searchWrap">
+      <input id="q" placeholder="দেশ খোঁজো… (বাংলায় বা ইংরেজিতে)" autocomplete="off">
+      <div id="sugg"></div>
+    </div>
+    <div id="tabs"><button class="on" data-tab="info">🌐 তথ্য</button><button data-tab="quiz">🎯 কুইজ</button></div>
+    <div id="content"></div>
+  </aside>
+  <main id="globeWrap">
+    <div id="globe"></div>
+    <div id="hint">🖱 টেনে ঘোরাও · স্ক্রল করে জুম · দেশে ক্লিক করো</div>
+    <div id="tools">
+      <button id="bRot" class="on">🔄 ঘূর্ণন</button>
+      <button id="bNight">🌙 রাত</button>
+      <select id="sColor">
+        <option value="country">🌈 দেশভিত্তিক রং</option><option value="region">🎨 অঞ্চল</option>
+        <option value="pop">👥 জনসংখ্যা</option>
+        <option value="area">📐 আয়তন</option>
+      </select>
+      <button id="bRand">🎲 র‍্যান্ডম</button>
+      <button id="bHome">🏠 বাংলাদেশ</button>
+    </div>
+    <div id="legend"></div>
+  </main>
+</div>
+
+<div id="modal">
+  <div id="mbox">
+    <div id="mhead">
+      <img id="mflag" alt="">
+      <h3 id="mtitle"></h3>
+      <div id="mstat"></div>
+      <button class="btn alt" id="lv1">বিভাগ (ADM1)</button>
+      <button class="btn alt" id="lv2">জেলা (ADM2)</button>
+      <button class="btn alt on" id="lvP">📍 স্থান</button>
+      <button class="btn alt" id="mclose">✕ বন্ধ</button>
+    </div>
+    <div id="mapArea">
+      <svg id="map2d"></svg>
+      <div id="mtip"></div>
+      <div id="mcard"></div>
+      <div id="mdiag" style="display:none"><details><summary id="mdiagT"></summary><pre id="mdiagPre"></pre><button class="btn alt" id="mdiagCopy">📋 কপি করো</button></details></div>
+      <div id="mz"><button id="zin">＋</button><button id="zout">−</button><button id="zfit" title="Fit">⤢</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="lb"><img id="lbi" alt=""><div id="lbc"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/globe.gl@2/dist/globe.gl.min.js"></script>
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const bn=n=>Number(n).toLocaleString('bn-BD');
+const REG={Asia:'এশিয়া',Europe:'ইউরোপ',Africa:'আফ্রিকা',Americas:'আমেরিকা',Oceania:'ওশেনিয়া',Antarctic:'অ্যান্টার্কটিকা'};
+const REGCOL={Asia:'#f59e42',Europe:'#5b9dff',Africa:'#e6c84f',Americas:'#4fcf8b',Oceania:'#c084fc',Antarctic:'#cfe6f5'};
+const NODATA='#7d8aa6';
+const IMG='https://unpkg.com/three-globe/example/img/';
+
+let features=[], byCca3={}, selected=null, hovered=null, colorMode='country', night=false, rotating=true, tab='info';
+const COUNTRY_PALETTE=['#ff6b6b','#f7b267','#f7e733','#8ac926','#52b788','#2ec4b6','#4ea8de','#4361ee','#7b2cbf','#f15bb5','#ff9f1c','#00bbf9','#9bdeac','#e07a5f','#a06cd5','#d81159','#73c2fb','#c77dff'];
+function countryColor(f){let n=String(f.id||f.properties.name||'');let h=0;for(let i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))>>>0;return COUNTRY_PALETTE[h%COUNTRY_PALETTE.length];}
+let quizHL=null, quiz=null, world=null;
+const popScale=d3.scaleSequentialLog(d3.interpolateYlOrRd).domain([2e5,1.5e9]).clamp(true);
+const areaScale=d3.scaleSequentialLog(d3.interpolateYlGnBu).domain([1e3,1.7e7]).clamp(true);
+
+/* ---------- নাম ও তথ্য ---------- */
+const nameBn=f=>(f.d&&f.d.translations&&f.d.translations.ben&&f.d.translations.ben.common)||(f.d&&f.d.name&&f.d.name.common)||f.properties.name;
+const nameEn=f=>(f.d&&f.d.name&&f.d.name.common)||f.properties.name;
+const flagOf=f=>f.d&&f.d.flags&&(f.d.flags.png||f.d.flags.svg)||'';
+const capOf=f=>f.d&&f.d.capital&&f.d.capital[0]||'';
+
+function normalizeDataURL(url){
+  // GitHub web/raw URLs redirect through github.com and commonly fail browser CORS.
+  // Convert the documented /owner/repo/raw/REF/path form to raw.githubusercontent.com.
+  try{
+    const u=new URL(url,location.href);
+    if(u.hostname==='github.com'){
+      const m=u.pathname.match(/^\/([^/]+)\/([^/]+)\/raw\/([^/]+)\/(.+)$/);
+      if(m)return 'https://raw.githubusercontent.com/'+m[1]+'/'+m[2]+'/'+m[3]+'/'+m[4]+u.search;
+    }
+    return u.href;
+  }catch(e){return url;}
+}
+function asJsDelivrURL(url){
+  try{
+    const u=new URL(url,location.href);
+    let m=u.pathname.match(/^\/([^/]+)\/([^/]+)\/raw\/([^/]+)\/(.+)$/);
+    if(u.hostname==='github.com'&&m)return 'https://cdn.jsdelivr.net/gh/'+m[1]+'/'+m[2]+'@'+m[3]+'/'+m[4];
+    m=u.pathname.match(/^\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)$/);
+    if(u.hostname==='raw.githubusercontent.com'&&m)return 'https://cdn.jsdelivr.net/gh/'+m[1]+'/'+m[2]+'@'+m[3]+'/'+m[4];
+    return url;
+  }catch(e){return url;}
+}
+const BUILD='v3.13';
+function describeFetchError(e,candidate){
+  let host='?';try{host=new URL(candidate).hostname;}catch(_){}
+  let why;
+  if(e&&e.name==='AbortError')why='সময় শেষ (timeout) — সার্ভার সময়মতো উত্তর দেয়নি';
+  else if(e&&e.name==='TypeError')why='নেটওয়ার্ক/CORS ব্লক ("'+e.message+'") — ব্রাউজার অনুরোধটি যেতে বা উত্তর পড়তে দেয়নি (ফায়ারওয়াল, অ্যাডব্লকার, DNS বা CORS হতে পারে)';
+  else why=(e&&e.message)||String(e);
+  return host+' → '+why;
+}
+// opt: {timeout:ms, proxies:true|false}. সব ব্যর্থতার আসল কারণ err.attempts-এ জমা থাকে।
+async function getJSON(url,opt){
+  opt=opt||{};
+  const tmo=opt.timeout||18000,useProxy=opt.proxies!==false;
+  const normalized=normalizeDataURL(url);
+  const enc=encodeURIComponent(normalized);
+  const candidates=[normalized];
+  if(useProxy)candidates.push(
+    'https://api.allorigins.win/raw?url='+enc,
+    'https://corsproxy.io/?url='+enc,
+    'https://api.codetabs.com/v1/proxy?quest='+enc
+  );
+  const attempts=[];
+  for(const candidate of [...new Set(candidates)]){
+    const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),tmo);
+    let status=0;
+    try{
+      const r=await fetch(candidate,{signal:ctl.signal,cache:'no-store'});
+      status=r.status;
+      if(!r.ok)throw new Error('HTTP '+r.status+(r.status===404?' (ফাইল/পাথ নেই)':''));
+      const body=await r.text();
+      if(/^\s*version https:\/\/git-lfs/.test(body))throw new Error('Git-LFS পয়েন্টার ফাইল এসেছে, আসল GeoJSON নয়');
+      let data;
+      try{data=JSON.parse(body);}catch(parseError){
+        throw new Error('JSON পার্স ব্যর্থ; উত্তরের শুরু: '+JSON.stringify(body.slice(0,80)));
+      }
+      if(data&&typeof data.contents==='string'&&candidate.includes('allorigins.win')){
+        try{return JSON.parse(data.contents);}catch(e){}
+      }
+      return data;
+    }catch(e){
+      attempts.push(describeFetchError(e,candidate));
+      console.warn('[Earth Explorer] ডেটা উৎস ব্যর্থ:',candidate,e);
+      // মূল সার্ভারই স্পষ্ট ৪০৪ দিলে প্রক্সি চেষ্টা করে লাভ নেই
+      if(candidate===normalized&&(status===404||status===410))break;
+    }finally{clearTimeout(timer);}
+  }
+  const err=new Error(attempts.join(' | ')||'অজানা ত্রুটি');
+  err.attempts=attempts;
+  throw err;
+}
+
+// Offline ISO-3166 index: country selection and map controls still work if REST Countries is blocked.
+const OFFLINE_COUNTRIES=[{"cca3":"ABW","ccn3":"533","name":{"common":"Aruba"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"AFG","ccn3":"004","name":{"common":"Afghanistan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"AGO","ccn3":"024","name":{"common":"Angola"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"AIA","ccn3":"660","name":{"common":"Anguilla"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ALA","ccn3":"248","name":{"common":"Åland Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ALB","ccn3":"008","name":{"common":"Albania"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"AND","ccn3":"020","name":{"common":"Andorra"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ARE","ccn3":"784","name":{"common":"United Arab Emirates"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ARG","ccn3":"032","name":{"common":"Argentina"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ARM","ccn3":"051","name":{"common":"Armenia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ASM","ccn3":"016","name":{"common":"American Samoa"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ATA","ccn3":"010","name":{"common":"Antarctica"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ATF","ccn3":"260","name":{"common":"French Southern Territories"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ATG","ccn3":"028","name":{"common":"Antigua and Barbuda"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"AUS","ccn3":"036","name":{"common":"Australia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"AUT","ccn3":"040","name":{"common":"Austria"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"AZE","ccn3":"031","name":{"common":"Azerbaijan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BDI","ccn3":"108","name":{"common":"Burundi"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BEL","ccn3":"056","name":{"common":"Belgium"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BEN","ccn3":"204","name":{"common":"Benin"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BES","ccn3":"535","name":{"common":"Bonaire, Sint Eustatius and Saba"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BFA","ccn3":"854","name":{"common":"Burkina Faso"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BGD","ccn3":"050","name":{"common":"Bangladesh"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BGR","ccn3":"100","name":{"common":"Bulgaria"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BHR","ccn3":"048","name":{"common":"Bahrain"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BHS","ccn3":"044","name":{"common":"Bahamas"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BIH","ccn3":"070","name":{"common":"Bosnia and Herzegovina"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BLM","ccn3":"652","name":{"common":"Saint Barthélemy"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BLR","ccn3":"112","name":{"common":"Belarus"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BLZ","ccn3":"084","name":{"common":"Belize"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BMU","ccn3":"060","name":{"common":"Bermuda"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BOL","ccn3":"068","name":{"common":"Bolivia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BRA","ccn3":"076","name":{"common":"Brazil"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BRB","ccn3":"052","name":{"common":"Barbados"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BRN","ccn3":"096","name":{"common":"Brunei Darussalam"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BTN","ccn3":"064","name":{"common":"Bhutan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BVT","ccn3":"074","name":{"common":"Bouvet Island"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BWA","ccn3":"072","name":{"common":"Botswana"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CAF","ccn3":"140","name":{"common":"Central African Republic"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CAN","ccn3":"124","name":{"common":"Canada"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CCK","ccn3":"166","name":{"common":"Cocos (Keeling) Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CHE","ccn3":"756","name":{"common":"Switzerland"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CHL","ccn3":"152","name":{"common":"Chile"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CHN","ccn3":"156","name":{"common":"China"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CIV","ccn3":"384","name":{"common":"Côte d'Ivoire"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CMR","ccn3":"120","name":{"common":"Cameroon"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"COD","ccn3":"180","name":{"common":"Congo, The Democratic Republic of the"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"COG","ccn3":"178","name":{"common":"Congo"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"COK","ccn3":"184","name":{"common":"Cook Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"COL","ccn3":"170","name":{"common":"Colombia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"COM","ccn3":"174","name":{"common":"Comoros"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CPV","ccn3":"132","name":{"common":"Cabo Verde"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CRI","ccn3":"188","name":{"common":"Costa Rica"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CUB","ccn3":"192","name":{"common":"Cuba"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CUW","ccn3":"531","name":{"common":"Curaçao"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CXR","ccn3":"162","name":{"common":"Christmas Island"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CYM","ccn3":"136","name":{"common":"Cayman Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CYP","ccn3":"196","name":{"common":"Cyprus"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CZE","ccn3":"203","name":{"common":"Czechia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"DEU","ccn3":"276","name":{"common":"Germany"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"DJI","ccn3":"262","name":{"common":"Djibouti"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"DMA","ccn3":"212","name":{"common":"Dominica"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"DNK","ccn3":"208","name":{"common":"Denmark"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"DOM","ccn3":"214","name":{"common":"Dominican Republic"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"DZA","ccn3":"012","name":{"common":"Algeria"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ECU","ccn3":"218","name":{"common":"Ecuador"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"EGY","ccn3":"818","name":{"common":"Egypt"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ERI","ccn3":"232","name":{"common":"Eritrea"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ESH","ccn3":"732","name":{"common":"Western Sahara"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ESP","ccn3":"724","name":{"common":"Spain"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"EST","ccn3":"233","name":{"common":"Estonia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ETH","ccn3":"231","name":{"common":"Ethiopia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"FIN","ccn3":"246","name":{"common":"Finland"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"FJI","ccn3":"242","name":{"common":"Fiji"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"FLK","ccn3":"238","name":{"common":"Falkland Islands (Malvinas)"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"FRA","ccn3":"250","name":{"common":"France"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"FRO","ccn3":"234","name":{"common":"Faroe Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"FSM","ccn3":"583","name":{"common":"Micronesia, Federated States of"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GAB","ccn3":"266","name":{"common":"Gabon"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GBR","ccn3":"826","name":{"common":"United Kingdom"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GEO","ccn3":"268","name":{"common":"Georgia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GGY","ccn3":"831","name":{"common":"Guernsey"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GHA","ccn3":"288","name":{"common":"Ghana"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GIB","ccn3":"292","name":{"common":"Gibraltar"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GIN","ccn3":"324","name":{"common":"Guinea"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GLP","ccn3":"312","name":{"common":"Guadeloupe"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GMB","ccn3":"270","name":{"common":"Gambia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GNB","ccn3":"624","name":{"common":"Guinea-Bissau"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GNQ","ccn3":"226","name":{"common":"Equatorial Guinea"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GRC","ccn3":"300","name":{"common":"Greece"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GRD","ccn3":"308","name":{"common":"Grenada"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GRL","ccn3":"304","name":{"common":"Greenland"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GTM","ccn3":"320","name":{"common":"Guatemala"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GUF","ccn3":"254","name":{"common":"French Guiana"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GUM","ccn3":"316","name":{"common":"Guam"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GUY","ccn3":"328","name":{"common":"Guyana"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"HKG","ccn3":"344","name":{"common":"Hong Kong"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"HMD","ccn3":"334","name":{"common":"Heard Island and McDonald Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"HND","ccn3":"340","name":{"common":"Honduras"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"HRV","ccn3":"191","name":{"common":"Croatia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"HTI","ccn3":"332","name":{"common":"Haiti"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"HUN","ccn3":"348","name":{"common":"Hungary"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"IDN","ccn3":"360","name":{"common":"Indonesia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"IMN","ccn3":"833","name":{"common":"Isle of Man"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"IND","ccn3":"356","name":{"common":"India"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"IOT","ccn3":"086","name":{"common":"British Indian Ocean Territory"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"IRL","ccn3":"372","name":{"common":"Ireland"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"IRN","ccn3":"364","name":{"common":"Iran"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"IRQ","ccn3":"368","name":{"common":"Iraq"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ISL","ccn3":"352","name":{"common":"Iceland"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ISR","ccn3":"376","name":{"common":"Israel"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ITA","ccn3":"380","name":{"common":"Italy"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"JAM","ccn3":"388","name":{"common":"Jamaica"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"JEY","ccn3":"832","name":{"common":"Jersey"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"JOR","ccn3":"400","name":{"common":"Jordan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"JPN","ccn3":"392","name":{"common":"Japan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KAZ","ccn3":"398","name":{"common":"Kazakhstan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KEN","ccn3":"404","name":{"common":"Kenya"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KGZ","ccn3":"417","name":{"common":"Kyrgyzstan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KHM","ccn3":"116","name":{"common":"Cambodia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KIR","ccn3":"296","name":{"common":"Kiribati"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KNA","ccn3":"659","name":{"common":"Saint Kitts and Nevis"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KOR","ccn3":"410","name":{"common":"South Korea"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KWT","ccn3":"414","name":{"common":"Kuwait"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LAO","ccn3":"418","name":{"common":"Laos"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LBN","ccn3":"422","name":{"common":"Lebanon"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LBR","ccn3":"430","name":{"common":"Liberia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LBY","ccn3":"434","name":{"common":"Libya"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LCA","ccn3":"662","name":{"common":"Saint Lucia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LIE","ccn3":"438","name":{"common":"Liechtenstein"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LKA","ccn3":"144","name":{"common":"Sri Lanka"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LSO","ccn3":"426","name":{"common":"Lesotho"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LTU","ccn3":"440","name":{"common":"Lithuania"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LUX","ccn3":"442","name":{"common":"Luxembourg"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LVA","ccn3":"428","name":{"common":"Latvia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MAC","ccn3":"446","name":{"common":"Macao"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MAF","ccn3":"663","name":{"common":"Saint Martin (French part)"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MAR","ccn3":"504","name":{"common":"Morocco"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MCO","ccn3":"492","name":{"common":"Monaco"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MDA","ccn3":"498","name":{"common":"Moldova"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MDG","ccn3":"450","name":{"common":"Madagascar"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MDV","ccn3":"462","name":{"common":"Maldives"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MEX","ccn3":"484","name":{"common":"Mexico"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MHL","ccn3":"584","name":{"common":"Marshall Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MKD","ccn3":"807","name":{"common":"North Macedonia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MLI","ccn3":"466","name":{"common":"Mali"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MLT","ccn3":"470","name":{"common":"Malta"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MMR","ccn3":"104","name":{"common":"Myanmar"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MNE","ccn3":"499","name":{"common":"Montenegro"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MNG","ccn3":"496","name":{"common":"Mongolia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MNP","ccn3":"580","name":{"common":"Northern Mariana Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MOZ","ccn3":"508","name":{"common":"Mozambique"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MRT","ccn3":"478","name":{"common":"Mauritania"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MSR","ccn3":"500","name":{"common":"Montserrat"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MTQ","ccn3":"474","name":{"common":"Martinique"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MUS","ccn3":"480","name":{"common":"Mauritius"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MWI","ccn3":"454","name":{"common":"Malawi"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MYS","ccn3":"458","name":{"common":"Malaysia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MYT","ccn3":"175","name":{"common":"Mayotte"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NAM","ccn3":"516","name":{"common":"Namibia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NCL","ccn3":"540","name":{"common":"New Caledonia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NER","ccn3":"562","name":{"common":"Niger"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NFK","ccn3":"574","name":{"common":"Norfolk Island"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NGA","ccn3":"566","name":{"common":"Nigeria"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NIC","ccn3":"558","name":{"common":"Nicaragua"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NIU","ccn3":"570","name":{"common":"Niue"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NLD","ccn3":"528","name":{"common":"Netherlands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NOR","ccn3":"578","name":{"common":"Norway"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NPL","ccn3":"524","name":{"common":"Nepal"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NRU","ccn3":"520","name":{"common":"Nauru"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NZL","ccn3":"554","name":{"common":"New Zealand"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"OMN","ccn3":"512","name":{"common":"Oman"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PAK","ccn3":"586","name":{"common":"Pakistan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PAN","ccn3":"591","name":{"common":"Panama"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PCN","ccn3":"612","name":{"common":"Pitcairn"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PER","ccn3":"604","name":{"common":"Peru"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PHL","ccn3":"608","name":{"common":"Philippines"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PLW","ccn3":"585","name":{"common":"Palau"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PNG","ccn3":"598","name":{"common":"Papua New Guinea"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"POL","ccn3":"616","name":{"common":"Poland"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PRI","ccn3":"630","name":{"common":"Puerto Rico"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PRK","ccn3":"408","name":{"common":"North Korea"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PRT","ccn3":"620","name":{"common":"Portugal"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PRY","ccn3":"600","name":{"common":"Paraguay"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PSE","ccn3":"275","name":{"common":"Palestine, State of"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PYF","ccn3":"258","name":{"common":"French Polynesia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"QAT","ccn3":"634","name":{"common":"Qatar"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"REU","ccn3":"638","name":{"common":"Réunion"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ROU","ccn3":"642","name":{"common":"Romania"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"RUS","ccn3":"643","name":{"common":"Russian Federation"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"RWA","ccn3":"646","name":{"common":"Rwanda"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SAU","ccn3":"682","name":{"common":"Saudi Arabia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SDN","ccn3":"729","name":{"common":"Sudan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SEN","ccn3":"686","name":{"common":"Senegal"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SGP","ccn3":"702","name":{"common":"Singapore"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SGS","ccn3":"239","name":{"common":"South Georgia and the South Sandwich Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SHN","ccn3":"654","name":{"common":"Saint Helena, Ascension and Tristan da Cunha"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SJM","ccn3":"744","name":{"common":"Svalbard and Jan Mayen"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SLB","ccn3":"090","name":{"common":"Solomon Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SLE","ccn3":"694","name":{"common":"Sierra Leone"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SLV","ccn3":"222","name":{"common":"El Salvador"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SMR","ccn3":"674","name":{"common":"San Marino"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SOM","ccn3":"706","name":{"common":"Somalia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SPM","ccn3":"666","name":{"common":"Saint Pierre and Miquelon"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SRB","ccn3":"688","name":{"common":"Serbia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SSD","ccn3":"728","name":{"common":"South Sudan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"STP","ccn3":"678","name":{"common":"Sao Tome and Principe"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SUR","ccn3":"740","name":{"common":"Suriname"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SVK","ccn3":"703","name":{"common":"Slovakia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SVN","ccn3":"705","name":{"common":"Slovenia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SWE","ccn3":"752","name":{"common":"Sweden"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SWZ","ccn3":"748","name":{"common":"Eswatini"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SXM","ccn3":"534","name":{"common":"Sint Maarten (Dutch part)"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SYC","ccn3":"690","name":{"common":"Seychelles"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SYR","ccn3":"760","name":{"common":"Syria"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TCA","ccn3":"796","name":{"common":"Turks and Caicos Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TCD","ccn3":"148","name":{"common":"Chad"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TGO","ccn3":"768","name":{"common":"Togo"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"THA","ccn3":"764","name":{"common":"Thailand"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TJK","ccn3":"762","name":{"common":"Tajikistan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TKL","ccn3":"772","name":{"common":"Tokelau"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TKM","ccn3":"795","name":{"common":"Turkmenistan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TLS","ccn3":"626","name":{"common":"Timor-Leste"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TON","ccn3":"776","name":{"common":"Tonga"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TTO","ccn3":"780","name":{"common":"Trinidad and Tobago"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TUN","ccn3":"788","name":{"common":"Tunisia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TUR","ccn3":"792","name":{"common":"Türkiye"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TUV","ccn3":"798","name":{"common":"Tuvalu"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TWN","ccn3":"158","name":{"common":"Taiwan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TZA","ccn3":"834","name":{"common":"Tanzania"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"UGA","ccn3":"800","name":{"common":"Uganda"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"UKR","ccn3":"804","name":{"common":"Ukraine"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"UMI","ccn3":"581","name":{"common":"United States Minor Outlying Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"URY","ccn3":"858","name":{"common":"Uruguay"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"USA","ccn3":"840","name":{"common":"United States"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"UZB","ccn3":"860","name":{"common":"Uzbekistan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"VAT","ccn3":"336","name":{"common":"Holy See (Vatican City State)"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"VCT","ccn3":"670","name":{"common":"Saint Vincent and the Grenadines"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"VEN","ccn3":"862","name":{"common":"Venezuela"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"VGB","ccn3":"092","name":{"common":"Virgin Islands, British"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"VIR","ccn3":"850","name":{"common":"Virgin Islands, U.S."},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"VNM","ccn3":"704","name":{"common":"Vietnam"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"VUT","ccn3":"548","name":{"common":"Vanuatu"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"WLF","ccn3":"876","name":{"common":"Wallis and Futuna"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"WSM","ccn3":"882","name":{"common":"Samoa"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"YEM","ccn3":"887","name":{"common":"Yemen"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ZAF","ccn3":"710","name":{"common":"South Africa"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ZMB","ccn3":"894","name":{"common":"Zambia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ZWE","ccn3":"716","name":{"common":"Zimbabwe"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]}];
+
+// Small verified core fallback for common countries when every remote data source is unavailable.
+const CORE_COUNTRY_FALLBACK={
+  BGD:{capital:['Dhaka'],capitalInfo:{latlng:[23.8103,90.4125]},population:173562364,area:148460,region:'Asia',subregion:'Southern Asia',languages:{ben:'Bengali'},currencies:{BDT:{name:'Bangladeshi taka',symbol:'৳'}},borders:['IND','MMR'],timezones:['UTC+06:00'],flags:{png:'https://flagcdn.com/w320/bd.png',svg:'https://flagcdn.com/bd.svg'},translations:{ben:{common:'বাংলাদেশ'}}},
+  IND:{capital:['New Delhi'],capitalInfo:{latlng:[28.6139,77.209]},population:1428627663,area:3287590,region:'Asia',subregion:'Southern Asia',languages:{hin:'Hindi',eng:'English'},currencies:{INR:{name:'Indian rupee',symbol:'₹'}},borders:['BGD','BTN','MMR','CHN','NPL','PAK'],timezones:['UTC+05:30'],flags:{png:'https://flagcdn.com/w320/in.png',svg:'https://flagcdn.com/in.svg'}},
+  USA:{capital:['Washington, D.C.'],capitalInfo:{latlng:[38.8951,-77.0364]},population:340110988,area:9833517,region:'Americas',subregion:'North America',languages:{eng:'English'},currencies:{USD:{name:'United States dollar',symbol:'$'}},borders:['CAN','MEX'],timezones:['UTC-05:00'],flags:{png:'https://flagcdn.com/w320/us.png',svg:'https://flagcdn.com/us.svg'}},
+  GBR:{capital:['London'],capitalInfo:{latlng:[51.5072,-0.1276]},population:68350000,area:242495,region:'Europe',subregion:'Northern Europe',languages:{eng:'English'},currencies:{GBP:{name:'British pound',symbol:'£'}},borders:['IRL'],timezones:['UTC+00:00'],flags:{png:'https://flagcdn.com/w320/gb.png',svg:'https://flagcdn.com/gb.svg'}},
+  CHN:{capital:['Beijing'],capitalInfo:{latlng:[39.9042,116.4074]},population:1409670000,area:9706961,region:'Asia',subregion:'Eastern Asia',languages:{zho:'Chinese'},currencies:{CNY:{name:'Chinese yuan',symbol:'¥'}},borders:['AFG','BTN','MMR','IND','KAZ','NPL','PAK','RUS'],timezones:['UTC+08:00'],flags:{png:'https://flagcdn.com/w320/cn.png',svg:'https://flagcdn.com/cn.svg'}}
+};
+
+async function loadData(){
+  $('#loadmsg').textContent='মানচিত্রের সীমানা আনা হচ্ছে…';
+  const topo=await getJSON('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json');
+  features=topojson.feature(topo,topo.objects.countries).features.filter(f=>f.properties.name!=='Antarctica');
+  $('#loadmsg').textContent='দেশের তথ্য আনা হচ্ছে…';
+  let data=null;
+  const hasUsefulData=a=>Array.isArray(a)&&a.some(d=>d&&d.cca3&&(d.population||d.capital&&d.capital.length||d.languages&&Object.keys(d.languages).length));
+  try{const c=localStorage.getItem('ee_data_v2');if(c){const parsed=JSON.parse(c);if(hasUsefulData(parsed))data=parsed;}}catch(e){}
+  // Primary: one request, so a failure in one of two old split requests cannot erase all data.
+  if(!data){
+    try{
+      data=await getJSON('https://restcountries.com/v3.1/all?fields=cca3,ccn3,name,capital,capitalInfo,population,area,region,subregion,translations,languages,currencies,flags,latlng,timezones,borders');
+      if(!hasUsefulData(data))throw new Error('দেশের তথ্য অসম্পূর্ণ');
+      try{localStorage.setItem('ee_data_v2',JSON.stringify(data));}catch(e){}
+    }catch(e){
+      console.warn('প্রধান দেশ-তথ্য API ব্যর্থ; CDN বিকল্প চেষ্টা হচ্ছে',e);
+      try{
+        data=await getJSON('https://cdn.jsdelivr.net/npm/world-countries@5.0.0/countries.json');
+        if(!hasUsefulData(data))throw new Error('CDN দেশ-তথ্য অসম্পূর্ণ');
+        try{localStorage.setItem('ee_data_v2',JSON.stringify(data));}catch(e){}
+      }catch(e2){console.warn('CDN দেশ-তথ্যও পাওয়া যায়নি; অন্তর্নির্মিত তালিকা ব্যবহার হবে',e2);data=OFFLINE_COUNTRIES;}
+    }
+  }
+  if(!Array.isArray(data)||!data.length)data=OFFLINE_COUNTRIES;
+  // Preserve numeric country IDs and names from the built-in index while adding richer metadata.
+  const baseByCode={};OFFLINE_COUNTRIES.forEach(d=>baseByCode[d.cca3]=d);
+  data=data.map(d=>{
+    const b=baseByCode[d.cca3]||{}, core=CORE_COUNTRY_FALLBACK[d.cca3]||{};
+    const merged=Object.assign({},b,core,d,{name:Object.assign({},b.name||{},d.name||{}),translations:Object.assign({},core.translations||{},d.translations||{}),languages:Object.assign({},core.languages||{},d.languages||{}),currencies:Object.assign({},core.currencies||{},d.currencies||{}),flags:Object.assign({},core.flags||{},d.flags||{})});
+    for(const k of ['capital','capitalInfo','population','area','region','subregion','borders','timezones'])if((merged[k]==null||(Array.isArray(merged[k])&&!merged[k].length)||(k==='region'&&merged[k]==='Other'))&&core[k]!=null)merged[k]=core[k];
+    return merged;
+  });
+  // Add core entries even if a fallback dataset omitted them.
+  for(const [code,extra] of Object.entries(CORE_COUNTRY_FALLBACK)){
+    if(!data.some(d=>d.cca3===code)){const base=baseByCode[code]||{};data.push(Object.assign({},base,extra,{cca3:code,name:base.name||{common:code}}));}
+  }
+  const byNum={},byName={};
+  data.forEach(d=>{if(d.cca3)byCca3[d.cca3]=d;if(d.ccn3)byNum[String(d.ccn3).padStart(3,'0')]=d;if(d.name&&d.name.common)byName[d.name.common.toLowerCase()]=d;});
+  features.forEach(f=>{
+    const id=f.id!=null?String(f.id).padStart(3,'0'):null;
+    f.d=(id&&byNum[id])||byName[(f.properties.name||'').toLowerCase()]||null;
+    f.cen=d3.geoCentroid(f);
+    f.garea=d3.geoArea(f);
+  });
+  features.forEach(f=>{if(f.d)f.d.f=f;});
+}
+/* ---------- রং ---------- */
+function baseColor(f){
+  if(colorMode==='country')return countryColor(f);
+  if(!f.d)return NODATA;
+  if(colorMode==='pop')return f.d.population?popScale(Math.max(f.d.population,2e5)):NODATA;
+  if(colorMode==='area')return f.d.area?areaScale(Math.max(f.d.area,1e3)):NODATA;
+  return REGCOL[f.d.region]||NODATA;
+}
+function colorOf(f){
+  if(quizHL&&quizHL.f===f)return quizHL.ok?'rgba(61,220,132,.95)':'rgba(255,93,108,.95)';
+  if(f===selected)return 'rgba(255,213,74,.95)';
+  const c=d3.color(baseColor(f));c.opacity=f===hovered?.92:.62;return c.formatRgb();
+}
+function altOf(f){return f===selected||(quizHL&&quizHL.f===f)?0.06:f===hovered?0.035:0.008;}
+function refresh(){world.polygonCapColor(f=>colorOf(f)).polygonAltitude(f=>altOf(f));}
+
+function legend(){
+  const L=$('#legend');
+  if(colorMode==='country'){
+    L.innerHTML='<div class="lg"><span><i style="background:#ff6b6b"></i>দেশভিত্তিক আলাদা রং</span><span><i style="background:#ffd54a"></i>নির্বাচিত দেশ</span></div>';
+  }else if(colorMode==='region'){
+    L.innerHTML='<div class="lg">'+Object.keys(REGCOL).filter(k=>k!=='Antarctic').map(k=>`<span><i style="background:${REGCOL[k]}"></i>${REG[k]}</span>`).join('')+'</div>';
+  }else{
+    const sc=colorMode==='pop'?popScale:areaScale;
+    const stops=d3.range(0,1.01,.1).map(t=>sc(sc.domain()[0]*Math.pow(sc.domain()[1]/sc.domain()[0],t))).join(',');
+    L.innerHTML=(colorMode==='pop'?'জনসংখ্যা (কম → বেশি)':'আয়তন (ছোট → বড়)')+`<div class="grad" style="background:linear-gradient(90deg,${stops})"></div>`;
+  }
+}
+
+/* ---------- গ্লোব ---------- */
+function initGlobe(){
+  const el=$('#globe');
+  world=Globe()(el)
+    .globeImageUrl(IMG+'earth-blue-marble.jpg')
+    .bumpImageUrl(IMG+'earth-topology.png')
+    .backgroundImageUrl(IMG+'night-sky.png')
+    .atmosphereColor('#6bb8ff').atmosphereAltitude(0.2)
+    .polygonsData(features)
+    .polygonSideColor(()=>'rgba(255,255,255,0.08)')
+    .polygonStrokeColor(()=>'rgba(10,15,30,.75)')
+    .polygonsTransitionDuration(200)
+    .polygonLabel(f=>{
+      if(quiz&&quiz.mode==='locate'&&!quiz.done)return '';
+      return `<div class="tip">${flagOf(f)?`<img src="${esc(flagOf(f))}">`:''}<b>${esc(nameBn(f))}</b><br><span style="color:#8fa0c8">${esc(nameEn(f))}${f.d&&f.d.population?' · '+bn(f.d.population)+' জন':''}</span></div>`;
+    })
+    .onPolygonHover(f=>{hovered=f||null;el.style.cursor=f?'pointer':'grab';refresh();})
+    .onPolygonClick(f=>handleClick(f))
+    .labelsData([]).labelLat(d=>d.lat).labelLng(d=>d.lng).labelText(d=>d.t).labelSize(1.3).labelDotRadius(.45).labelColor(()=>'#fff').labelAltitude(0.06).labelResolution(2)
+    .ringsData([]).ringColor(()=>t=>`rgba(255,213,74,${1-t})`).ringMaxRadius(3).ringPropagationSpeed(2).ringRepeatPeriod(1100)
+    .pointsData([]).pointLat(d=>d.lat).pointLng(d=>d.lng).pointColor(d=>d.unesco?'#ff7ad9':'#7dffb3').pointAltitude(0.03).pointRadius(0.28)
+    .pointLabel(d=>`<div class="tip"><b>${esc(d.name)}</b>${d.unesco?'<br><span style="color:#ff9be6">UNESCO বিশ্ব ঐতিহ্য</span>':''}</div>`)
+    .onPointClick(d=>{setTab('info');setTimeout(()=>togglePlace(d.id),60);});
+  const c=world.controls();c.autoRotate=true;c.autoRotateSpeed=.45;c.enableDamping=true;
+  world.pointOfView({lat:23.7,lng:90.4,altitude:2.3},0);
+  const fit=()=>world.width(el.clientWidth).height(el.clientHeight);fit();
+  addEventListener('resize',fit);
+  refresh();legend();
+}
+function setRotate(on){rotating=on;world.controls().autoRotate=on;$('#bRot').classList.toggle('on',on);}
+
+function flyTo(f,ms=1300){
+  const a=f.garea||0.01;
+  const alt=Math.min(2.4,Math.max(0.4,0.35+Math.sqrt(a)*2.2));
+  world.pointOfView({lat:f.cen[1],lng:f.cen[0],altitude:alt},ms);
+}
+
+function handleClick(f){
+  if(quiz&&quiz.mode==='locate'&&!quiz.done){answerLocate(f);return;}
+  select(f);
+}
+
+function select(f,fly=true){
+  selected=f;setRotate(false);world.pointsData([]);
+  if(fly)flyTo(f);
+  if(f.d&&f.d.capitalInfo&&f.d.capitalInfo.latlng){
+    const [lat,lng]=f.d.capitalInfo.latlng;
+    world.labelsData([{lat,lng,t:capOf(f)}]);world.ringsData([{lat,lng}]);
+  }else{world.labelsData([]);world.ringsData([]);}
+  refresh();
+  setTab('info');
+}
+function deselect(){selected=null;world.labelsData([]);world.ringsData([]);world.pointsData([]);refresh();}
+
+/* ---------- তথ্য প্যানেল ---------- */
+function localTime(d){
+  const tz=d.timezones&&d.timezones[0];if(!tz)return '';
+  const m=/UTC(?:([+-])(\d\d):(\d\d))?/.exec(tz);if(!m)return '';
+  const off=m[1]?(m[1]==='-'?-1:1)*(+m[2]*60+ +m[3]):0;
+  const t=new Date(Date.now()+off*60000);
+  return t.toLocaleTimeString('bn-BD',{timeZone:'UTC',hour:'2-digit',minute:'2-digit'})+' ('+tz+')';
+}
+function renderInfo(){
+  const C=$('#content');
+  if(tab!=='info')return;
+  const f=selected;
+  if(!f){
+    C.innerHTML=`<div class="welcome"><big>🌍</big>পৃথিবীর যেকোনো দেশে ক্লিক করো,<br>অথবা উপরের সার্চে নাম লেখো।<br><small>দেশের তথ্য, জেলা-মানচিত্র, প্রতিবেশী দেশ — সব এক জায়গায়।</small></div>
+    <div class="card"><b>পৃথিবীর কিছু তথ্য</b><div class="row">🌐 দেশ: ${bn(features.length)}টি (এই মানচিত্রে)<br>📍 বাংলাদেশ থেকে শুরু করো — <span class="chip" data-code="BGD">বাংলাদেশ</span></div></div>`;
+    return;
+  }
+  const d=f.d;
+  if(!d){C.innerHTML=`<div class="card hero"><div><h2>${esc(f.properties.name)}</h2><div class="en">বিস্তারিত তথ্য পাওয়া যায়নি (ইন্টারনেট/API সমস্যা)</div></div></div>`;return;}
+  const hasDetails=!!(d.population||d.area||(d.capital&&d.capital.length)||(d.languages&&Object.keys(d.languages).length)||(d.currencies&&Object.keys(d.currencies).length));
+  if(!hasDetails){C.innerHTML=`<div class="card hero"><div><h2>${esc(nameBn(f))}</h2><div class="en">দেশটি নির্বাচিত হয়েছে, কিন্তু বিস্তারিত তথ্য সার্ভার থেকে আসেনি। ইন্টারনেট সংযোগ পরীক্ষা করে পৃষ্ঠা রিফ্রেশ করো।</div></div></div>`;return;}
+  const langs=d.languages?Object.values(d.languages).join(', '):'—';
+  const curs=d.currencies?Object.values(d.currencies).map(c=>c.name+(c.symbol?' ('+c.symbol+')':'')).join(', '):'—';
+  const nb=(d.borders||[]).map(c=>byCca3[c]&&byCca3[c].f?`<span class="chip" data-code="${c}">${esc(nameBn(byCca3[c].f))}</span>`:'').join('')||'<span style="color:var(--mute)">স্থলসীমানা নেই (দ্বীপরাষ্ট্র)</span>';
+  const dens=d.area&&d.population?Math.round(d.population/d.area):null;
+  C.innerHTML=`
+  <div class="card">
+    <div class="hero"><img class="flag" src="${esc(flagOf(f))}" alt=""><div><h2>${esc(nameBn(f))}</h2><div class="en">${esc(nameEn(f))}</div></div></div>
+    <div class="grid2" style="margin-top:12px">
+      <div class="stat"><b>🏛 রাজধানী</b><span>${esc(capOf(f)||'—')}</span></div>
+      <div class="stat"><b>🧭 অঞ্চল</b><span>${esc(REG[d.region]||d.region||'—')}${d.subregion?' · '+esc(d.subregion):''}</span></div>
+      <div class="stat"><b>👥 জনসংখ্যা</b><span>${d.population?bn(d.population):'—'}</span></div>
+      <div class="stat"><b>📐 আয়তন</b><span>${d.area?bn(Math.round(d.area))+' বর্গ কিমি':'—'}</span></div>
+      <div class="stat"><b>🏙 ঘনত্ব</b><span>${dens!=null?bn(dens)+' জন/বর্গ কিমি':'—'}</span></div>
+      <div class="stat"><b>🕒 এখন সময়</b><span>${esc(localTime(d)||'—')}</span></div>
+    </div>
+    <div class="row"><b>🗣 ভাষা</b>${esc(langs)}</div>
+    <div class="row"><b>💰 মুদ্রা</b>${esc(curs)}</div>
+    <div class="row"><b>🤝 প্রতিবেশী দেশ</b><div class="chips">${nb}</div></div>
+    <div class="btns"><button class="btn" id="b2d">🗺 জেলা/বিভাগ মানচিত্র</button><button class="btn alt" id="bBack">← সব দেশ</button></div>
+  </div>`;
+  $('#b2d').onclick=()=>open2D(f);
+  $('#bBack').onclick=()=>{deselect();setRotate(true);world.pointOfView({altitude:2.3},1200);renderInfo();};
+  C.insertAdjacentHTML('beforeend','<div id="extras"></div>');loadExtras(f);
+}
+
+/* ---------- সার্চ ---------- */
+function setupSearch(){
+  const q=$('#q'),S=$('#sugg');let list=[],idx=-1;
+  function show(){
+    const t=q.value.trim().toLowerCase();
+    if(!t){S.style.display='none';return;}
+    list=features.filter(f=>nameBn(f).toLowerCase().includes(t)||nameEn(f).toLowerCase().includes(t)||(f.d&&f.d.cca3.toLowerCase()===t)).slice(0,8);
+    idx=list.length?0:-1;
+    S.innerHTML=list.map((f,i)=>`<div data-i="${i}" class="${i===0?'on':''}">${flagOf(f)?`<img src="${esc(flagOf(f))}">`:''}<span>${esc(nameBn(f))} <small style="color:var(--mute)">${esc(nameEn(f))}</small></span></div>`).join('')||'<div style="color:var(--mute)">কিছু পাওয়া যায়নি</div>';
+    S.style.display='block';
+  }
+  q.addEventListener('input',show);
+  q.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'&&list.length){idx=(idx+1)%list.length;}
+    else if(e.key==='ArrowUp'&&list.length){idx=(idx-1+list.length)%list.length;}
+    else if(e.key==='Enter'&&list[idx]){pick(list[idx]);return;}
+    else return;
+    e.preventDefault();[...S.children].forEach((c,i)=>c.classList.toggle('on',i===idx));
+  });
+  S.addEventListener('click',e=>{const el=e.target.closest('[data-i]');if(el)pick(list[+el.dataset.i]);});
+  document.addEventListener('click',e=>{if(!e.target.closest('#searchWrap'))S.style.display='none';});
+  function pick(f){q.value='';S.style.display='none';q.blur();select(f);}
+}
+
+/* ---------- কুইজ ---------- */
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
+function best(){try{return +localStorage.getItem('ee_best')||0;}catch(e){return 0;}}
+function setBest(v){try{localStorage.setItem('ee_best',v);}catch(e){}}
+
+function renderQuizHome(){
+  const C=$('#content');
+  C.innerHTML=`<div class="card"><b>🎯 কুইজ খেলো</b><div class="row" style="color:var(--mute)">প্রতি রাউন্ডে ১০টি প্রশ্ন। সর্বোচ্চ স্কোর: <b style="color:var(--gold)">${bn(best())}</b>/১০</div></div>
+  <div class="modes">
+    <button class="btn" data-m="capital">🏛 রাজধানী চেনো<small>দেশ দেখে রাজধানী বেছে নাও</small></button>
+    <button class="btn" data-m="flag">🚩 পতাকা চেনো<small>পতাকা দেখে দেশ বলো</small></button>
+    <button class="btn" data-m="locate">📍 গ্লোবে খোঁজো<small>নাম দেখে গ্লোবে সঠিক দেশে ক্লিক করো</small></button>
+  </div>`;
+  C.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>startQuiz(b.dataset.m));
+}
+function startQuiz(mode){
+  const pool=features.filter(f=>f.d&&capOf(f)&&flagOf(f));
+  if(pool.length<12){$('#content').innerHTML='<div class="card">কুইজের জন্য দেশের তথ্য লোড হয়নি। ইন্টারনেট চালু করে পেজ রিলোড করো।</div>';return;}
+  deselect();quizHL=null;
+  quiz={mode,pool,qs:shuffle(pool).slice(0,10),i:0,score:0,streak:0,done:false};
+  setRotate(false);world.pointOfView({altitude:2.4},900);
+  renderQ();
+}
+function renderQ(){
+  const C=$('#content'),q=quiz.qs[quiz.i];quiz.done=false;quizHL=null;refresh();
+  const head=`<div class="qhead"><span>প্রশ্ন ${bn(quiz.i+1)}/১০</span><span>স্কোর ${bn(quiz.score)} · 🔥 ${bn(quiz.streak)}</span></div><div class="bar"><i style="width:${quiz.i*10}%"></i></div>`;
+  if(quiz.mode==='capital'){
+    const opts=shuffle([capOf(q),...shuffle(quiz.pool.filter(x=>capOf(x)!==capOf(q))).slice(0,3).map(capOf)]);
+    C.innerHTML=`<div class="card">${head}<div class="qtext">${q.d&&flagOf(q)?`<img src="${esc(flagOf(q))}" style="width:40px;vertical-align:middle;border-radius:3px;margin-right:8px">`:''}<b>${esc(nameBn(q))}</b>-এর রাজধানী কোনটি?</div>${opts.map(o=>`<button class="opt" data-v="${esc(o)}">${esc(o)}</button>`).join('')}<div class="fb" id="fb"></div></div>`;
+    C.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answerOpt(b,b.dataset.v===capOf(q),capOf(q)));
+  }else if(quiz.mode==='flag'){
+    const opts=shuffle([q,...shuffle(quiz.pool.filter(x=>x!==q)).slice(0,3)]);
+    C.innerHTML=`<div class="card">${head}<div class="qtext">এই পতাকাটি কোন দেশের?</div><img src="${esc(flagOf(q))}" style="width:170px;border-radius:8px;margin-bottom:12px;box-shadow:0 4px 16px #0008">${opts.map(o=>`<button class="opt" data-c="${o.d.cca3}">${esc(nameBn(o))}</button>`).join('')}<div class="fb" id="fb"></div></div>`;
+    C.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answerOpt(b,b.dataset.c===q.d.cca3,nameBn(q)));
+  }else{
+    C.innerHTML=`<div class="card">${head}<div class="qtext">📍 গ্লোবে খুঁজে বের করো:<br><b style="font-size:21px">${esc(nameBn(q))}</b></div><div class="fb" id="fb" style="color:var(--mute)">গ্লোব ঘুরিয়ে সঠিক দেশে ক্লিক করো</div><div class="btns"><button class="btn alt" id="skip">ছেড়ে দাও</button></div></div>`;
+    $('#skip').onclick=()=>finishLocate(null);
+  }
+}
+function feedback(ok,right){
+  quiz.done=true;
+  if(ok){quiz.score++;quiz.streak++;}else quiz.streak=0;
+  const fb=$('#fb');
+  fb.innerHTML=ok?`✅ সঠিক! ${quiz.streak>=3?'🔥 টানা '+bn(quiz.streak)+'টি!':''}`:`❌ ভুল। সঠিক উত্তর: <b>${esc(right)}</b>`;
+  fb.style.color=ok?'var(--ok)':'var(--bad)';
+  const last=quiz.i>=9;
+  fb.insertAdjacentHTML('afterend',`<div class="btns"><button class="btn" id="nx">${last?'ফলাফল দেখো':'পরের প্রশ্ন →'}</button></div>`);
+  $('#nx').onclick=()=>{quiz.i++;last?endQuiz():renderQ();};
+}
+function answerOpt(btn,ok,right){
+  if(quiz.done)return;
+  document.querySelectorAll('.opt').forEach(b=>{b.disabled=true;});
+  btn.classList.add(ok?'ok':'bad');
+  if(!ok){document.querySelectorAll('.opt').forEach(b=>{if((quiz.mode==='capital'&&b.dataset.v===right)||(quiz.mode==='flag'&&b.textContent===right))b.classList.add('ok');});}
+  const q=quiz.qs[quiz.i];quizHL={f:q,ok};flyTo(q,1000);refresh();
+  feedback(ok,right);
+}
+function answerLocate(f){
+  const q=quiz.qs[quiz.i];
+  if(f===q)finishLocate(true,q);
+  else finishLocate(false,q,f);
+}
+function finishLocate(ok,q,wrongF){
+  if(quiz.done)return;
+  q=q||quiz.qs[quiz.i];
+  quizHL={f:q,ok:ok===true};flyTo(q,1100);refresh();
+  feedback(ok===true,ok===false&&wrongF?`${nameBn(q)} (তুমি ক্লিক করেছ: ${nameBn(wrongF)})`:nameBn(q));
+}
+function endQuiz(){
+  const C=$('#content'),s=quiz.score;let nb=false;
+  if(s>best()){setBest(s);nb=true;}
+  const msg=s>=9?'অসাধারণ! তুমি তো চলন্ত মানচিত্র! 🏆':s>=6?'দারুণ খেলেছ! 👏':s>=3?'ভালো চেষ্টা! আবার চেষ্টা করো 💪':'চলো আবার চেষ্টা করি 🌱';
+  quizHL=null;quiz.done=true;refresh();
+  C.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:46px">${s>=6?'🎉':'🌍'}</div><h2 style="margin:6px 0">${bn(s)} / ১০</h2><div>${msg}</div>${nb?'<div style="color:var(--gold);margin-top:6px">🌟 নতুন সর্বোচ্চ স্কোর!</div>':''}<div class="btns" style="justify-content:center"><button class="btn" id="again">আবার খেলো</button><button class="btn alt" id="qh">মোড বদলাও</button></div></div>`;
+  $('#again').onclick=()=>startQuiz(quiz.mode);
+  $('#qh').onclick=()=>{quiz=null;renderQuizHome();};
+}
+
+function setTab(t){
+  tab=t;document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  if(t==='info'){renderInfo();}
+  else{ if(quiz&&!quiz.done&&quiz.i<10)renderQ(); else renderQuizHome(); }
+}
+
+/* ---------- ২D মানচিত্র ---------- */
+const M={tok:0,ctok:0,showPl:true,proj:null,k:1,svg:null,g:null,zoom:null,f:null,level:null,cache:{},feats:null};
+const PAL=['#8ecae6','#ffb703','#b7e4c7','#f4a6c0','#cdb4db','#ffd6a5','#a0c4ff','#fdffb6','#caffbf','#ffc6ff'];
+
+function open2D(f){
+  if(!f)return;
+  if(!f.d){$('#mstat').textContent='দেশের ISO কোড শনাক্ত করা যায়নি; অনুগ্রহ করে পেজ রিফ্রেশ করো।';return;}
+  M.f=f;M.cache={};M.feats=null;M.log=[];M.fell=null;hideDiag();
+  $('#modal').style.display='flex';
+  $('#mflag').src=flagOf(f);$('#mtitle').textContent=nameBn(f)+' — মানচিত্র';
+  $('#mstat').textContent='লোড হচ্ছে…';
+  drawMap(null);
+  $('#mcard').style.display='none';M.showPl=true;$('#lvP').classList.add('on');
+  ensurePlaces(f);
+  loadLevel('ADM2',true);
+}
+function close2D(){$('#modal').style.display='none';M.tok++;}
+
+/* ---------- সীমানা: ডেটা আনা + যাচাই + winding ঠিক করা ---------- */
+const TWO_PI=2*Math.PI;
+// d3 চায় বহিঃরেখা ঘড়ির কাঁটার দিকে, ছিদ্র উল্টো দিকে। RFC 7946 GeoJSON সাধারণত উল্টো (CCW) —
+// তখন d3 পুরো পৃথিবী "ভরাট" ধরে নেয় এবং মানচিত্র অতি ক্ষুদ্র/উল্টো হয়ে যায়। তাই প্রতিটি রিং ঠিক করা হয়।
+function rewindRing(ring,isHole){
+  if(!Array.isArray(ring)||ring.length<4)return ring;
+  const area=d3.geoArea({type:'Polygon',coordinates:[ring]});
+  const wrong=isHole?(area<TWO_PI):(area>TWO_PI);
+  return wrong?ring.slice().reverse():ring;
+}
+function rewindPolygon(rings){return rings.map((r,i)=>rewindRing(r,i>0));}
+function rewindGeometry(g){
+  if(!g)return g;
+  if(g.type==='Polygon')return {type:'Polygon',coordinates:rewindPolygon(g.coordinates)};
+  if(g.type==='MultiPolygon')return {type:'MultiPolygon',coordinates:g.coordinates.map(rewindPolygon)};
+  if(g.type==='GeometryCollection')return {type:'GeometryCollection',geometries:g.geometries.map(rewindGeometry)};
+  return g;
+}
+// যেকোনো উত্তরকে নিরাপদ FeatureCollection-এ রূপান্তর; অবৈধ হলে নির্দিষ্ট কারণসহ ত্রুটি।
+function normalizeBoundary(data){
+  if(!data||typeof data!=='object')throw new Error('উত্তর JSON অবজেক্ট নয়');
+  let feats;
+  if(data.type==='FeatureCollection'&&Array.isArray(data.features))feats=data.features;
+  else if(data.type==='Feature')feats=[data];
+  else if(data.type==='Topology')throw new Error('TopoJSON এসেছে, GeoJSON আশা করা হয়েছিল');
+  else throw new Error('অচেনা ফরম্যাট (type='+JSON.stringify(data.type)+'; কী: '+Object.keys(data).slice(0,8).join(',')+')');
+  if(!feats.length)throw new Error('GeoJSON-এ কোনো feature নেই');
+  const ok=feats.filter(f=>f&&f.geometry&&/Polygon/.test(f.geometry.type)&&f.geometry.coordinates&&f.geometry.coordinates.length);
+  if(!ok.length)throw new Error(feats.length+'টি feature আছে কিন্তু কোনোটিতে Polygon জিওমেট্রি নেই');
+  return {type:'FeatureCollection',features:ok.map(f=>({type:'Feature',properties:f.properties||{},geometry:rewindGeometry(f.geometry)}))};
+}
+// একাধিক উৎস: প্রথমে সব সরাসরি (দ্রুত, সমান্তরাল), তারপর CORS-প্রক্সি। প্রতিটি ধাপ log-এ লেখা হয়।
+async function fetchBoundary(iso,lvl,log){
+  const API=`https://www.geoboundaries.org/api/current/gbOpen/${iso}/${lvl}/`;
+  const cands=[],seen=new Set();
+  const add=(label,u)=>{if(typeof u==='string'&&u&&!seen.has(u)){seen.add(u);cands.push({label,u});}};
+  // ধাপ ১: সরকারি API
+  try{
+    let meta=await getJSON(API,{timeout:15000});
+    if(Array.isArray(meta))meta=meta[0];
+    if(!meta||typeof meta!=='object')throw new Error('API উত্তর খালি/অচেনা');
+    log.push('✔ ধাপ ১ — API মেটাডেটা এসেছে');
+    if(!meta.simplifiedGeometryGeoJSON&&!meta.gjDownloadURL)log.push('  ⚠ মেটাডেটায় GeoJSON URL নেই; পাওয়া কী: '+Object.keys(meta).join(', '));
+    add('API simplified',meta.simplifiedGeometryGeoJSON);
+    add('API simplified (jsDelivr)',asJsDelivrURL(normalizeDataURL(meta.simplifiedGeometryGeoJSON||'')));
+    add('API full',meta.gjDownloadURL);
+    add('API full (jsDelivr)',asJsDelivrURL(normalizeDataURL(meta.gjDownloadURL||'')));
+  }catch(e){
+    log.push('✘ ধাপ ১ — API ব্যর্থ: '+e.message);
+  }
+  // ধাপ ২: API ছাড়াই সরাসরি রিপোজিটরি পাথ (API/CORS ব্যর্থ হলেও কাজ করবে)
+  const base=`releaseData/gbOpen/${iso}/${lvl}/geoBoundaries-${iso}-${lvl}`;
+  for(const suf of ['_simplified.geojson','.geojson']){
+    add('raw.githubusercontent'+suf,`https://raw.githubusercontent.com/wmgeolab/geoBoundaries/main/${base}${suf}`);
+    add('jsDelivr'+suf,`https://cdn.jsdelivr.net/gh/wmgeolab/geoBoundaries@main/${base}${suf}`);
+    add('media.githubusercontent'+suf,`https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/${base}${suf}`);
+  }
+  log.push(`ধাপ ২ — মোট ${cands.length}টি উৎস চেষ্টা হবে`);
+  const tryOne=async(c,opt)=>{
+    try{
+      const data=await getJSON(c.u,opt);
+      const gj=normalizeBoundary(data);
+      return {gj,c};
+    }catch(e){e.cand=c;throw e;}
+  };
+  // ধাপ ৩ক: সরাসরি, সমান্তরালে
+  const directErrs=[];
+  const direct=await Promise.all(cands.map(c=>tryOne(c,{proxies:false,timeout:20000}).then(r=>r,e=>{directErrs.push(e);return null;})));
+  for(const e of directErrs)log.push(`  ✘ [সরাসরি] ${e.cand.label}: ${e.message}`);
+  const win=direct.find(Boolean);
+  if(win){log.push(`✔ সফল: ${win.c.label} (${win.gj.features.length}টি feature)`);return win.gj;}
+  // ধাপ ৩খ: প্রক্সি (প্রথম ৩টি উৎস, ক্রমানুসারে)
+  for(const c of cands.slice(0,3)){
+    try{
+      const r=await tryOne(c,{timeout:25000});
+      log.push(`✔ সফল (প্রক্সি/সরাসরি): ${r.c.label} (${r.gj.features.length}টি feature)`);
+      return r.gj;
+    }catch(e){log.push(`  ✘ [প্রক্সিসহ] ${c.label}: ${e.message}`);}
+  }
+  const err=new Error('সব উৎস ব্যর্থ — বিস্তারিত নিচের ডায়াগনস্টিক প্যানেলে');
+  err.allFailed=true;
+  throw err;
+}
+
+/* ---------- ডায়াগনস্টিক প্যানেল ---------- */
+function envInfo(){
+  return [`Earth Explorer ${BUILD}`,`সময়: ${new Date().toISOString()}`,`পেজ: ${location.protocol}//${location.host||'(ফাইল)'}`,
+    `অনলাইন: ${navigator.onLine}`,`ব্রাউজার: ${navigator.userAgent}`].join('\n');
+}
+function showDiag(log,title,isError){
+  const box=$('#mdiag');if(!box)return;
+  const text=envInfo()+'\n\n'+log.join('\n');
+  $('#mdiagT').textContent=title;
+  $('#mdiagPre').textContent=text;
+  box.className=isError?'err':'warn';
+  box.style.display='block';
+  box.querySelector('details').open=!!isError;
+}
+function hideDiag(){const b=$('#mdiag');if(b)b.style.display='none';}
+
+async function loadLevel(lvl,auto){
+  if(!M.f||!M.f.d||!M.f.d.cca3){$('#mstat').textContent='দেশের ISO-3 কোড পাওয়া যায়নি; সীমানা আনা সম্ভব নয়।';return;}
+  const tok=++M.tok,iso=M.f.d.cca3;
+  if(!auto||!M.log)M.log=[];
+  const log=M.log;
+  log.push(`══ ${lvl} · ${iso} ══`);
+  hideDiag();
+  $('#lv1').classList.toggle('on',lvl==='ADM1');$('#lv2').classList.toggle('on',lvl==='ADM2');
+  $('#mstat').textContent=(lvl==='ADM2'?'জেলা':'বিভাগ')+'র সীমানা খোঁজা হচ্ছে…';
+  try{
+    let gj=M.cache[lvl];
+    if(!gj){
+      gj=await fetchBoundary(iso,lvl,log);
+      if(tok!==M.tok)return;
+      M.cache[lvl]=gj;
+    }
+    if(tok!==M.tok)return;
+    M.level=lvl;
+    try{drawMap(gj,lvl);}
+    catch(de){delete M.cache[lvl];log.push('✘ প্রসেসিং/ড্র ধাপে ত্রুটি: '+(de&&de.message||de));throw new Error('সীমানা এসেছে কিন্তু আঁকতে ব্যর্থ: '+(de&&de.message||de));}
+    if(M.fell){
+      $('#mstat').textContent+=` — (${M.fell} আনা যায়নি, তাই এটি দেখানো হচ্ছে)`;
+      showDiag(log,`⚠ ${M.fell}-এর সীমানা আসেনি; ${lvl} দেখানো হচ্ছে (বিস্তারিত)`,false);
+    }
+  }catch(e){
+    if(tok!==M.tok)return;
+    console.warn(e);
+    log.push(`✘ ${lvl} ব্যর্থ: ${e&&e.message||e}`);
+    if(auto&&lvl==='ADM2'){M.fell='ADM2';loadLevel('ADM1',true);return;}
+    const failed=M.fell?'ADM2 ও ADM1':lvl;M.fell=null;
+    $('#mstat').textContent='সীমানা লোড হয়নি ('+failed+'): '+String(e&&e.message||e).slice(0,160)+' — শুধু দেশের রূপরেখা দেখানো হচ্ছে।';
+    drawMap(null);
+    showDiag(log,'❌ সীমানা লোড ব্যর্থ — এই লেখাটি কপি করে পাঠান',true);
+  }
+}
+
+function drawMap(gj,lvl){
+  const svg=d3.select('#map2d');svg.selectAll('*').remove();
+  const node=svg.node(),W=node.clientWidth||900,H=node.clientHeight||600;
+  svg.attr('viewBox',`0 0 ${W} ${H}`);
+  const fitTo=gj?{type:'FeatureCollection',features:gj.features}:M.f;
+  const proj=d3.geoMercator().rotate([-M.f.cen[0],0]);
+  proj.fitExtent([[30,30],[W-30,H-30]],fitTo);
+  const path=d3.geoPath(proj);
+  if(gj){
+    const bb=path.bounds({type:'FeatureCollection',features:gj.features});
+    if(!bb||!bb.flat().every(isFinite)||(bb[1][0]-bb[0][0])<1||(bb[1][1]-bb[0][1])<1)throw new Error('সীমানার bounds অবৈধ ('+JSON.stringify(bb)+') — জিওমেট্রি/winding সমস্যা');
+  }
+  M.proj=proj;const mc0=$('#mcard');if(mc0)mc0.style.display='none';
+  const g=svg.append('g');
+  g.append('path').datum(M.f).attr('d',path).attr('fill','#1b2c57').attr('stroke','#4fb3ff').attr('stroke-width',1.2).attr('vector-effect','non-scaling-stroke');
+  let labels=null;
+  if(gj){
+    const nm=d=>d.properties.shapeName||d.properties.name||'';
+    g.selectAll('path.adm').data(gj.features).join('path').attr('class','adm').attr('d',path)
+      .attr('fill',(d,i)=>PAL[i%PAL.length]).attr('fill-opacity',.85)
+      .on('mousemove',(e,d)=>{const r=$('#mapArea').getBoundingClientRect(),t=$('#mtip');t.style.display='block';t.style.left=(e.clientX-r.left+14)+'px';t.style.top=(e.clientY-r.top+14)+'px';t.textContent=nm(d);d3.select(e.currentTarget).attr('fill-opacity',1);})
+      .on('mouseleave',e=>{$('#mtip').style.display='none';d3.select(e.currentTarget).attr('fill-opacity',.85);})
+      .on('click',(e,d)=>openRegion(d,e.currentTarget));
+    const data=gj.features.map(d=>{const b=path.bounds(d);return{n:nm(d),c:path.centroid(d),w:b[1][0]-b[0][0]};}).filter(x=>x.n&&isFinite(x.c[0]));
+    labels=g.selectAll('text.lbl').data(data).join('text').attr('class','lbl').attr('x',d=>d.c[0]).attr('y',d=>d.c[1]).attr('dy','.35em').text(d=>d.n);
+    $('#mstat').textContent=`${bn(gj.features.length)}টি ${lvl==='ADM2'?'জেলা/সমতুল্য এলাকা (ADM2)':'বিভাগ/প্রদেশ (ADM1)'} · সূত্র: geoBoundaries · এলাকায় ক্লিক করলে তথ্য আসবে`;
+  }
+  const upd=k=>{
+    g.selectAll('circle.pl').attr('r',5/k).attr('stroke-width',1.5/k);
+    if(!labels)return;
+    labels.attr('font-size',12/k).attr('stroke-width',3/k)
+      .style('display',d=>d.w*k>d.n.length*6.2?'block':'none');
+  };
+  const zoom=d3.zoom().scaleExtent([1,60]).on('zoom',e=>{g.attr('transform',e.transform);M.k=e.transform.k;upd(e.transform.k);});
+  svg.call(zoom).on('dblclick.zoom',null);
+  M.svg=svg;M.g=g;M.zoom=zoom;M.k=1;upd(1);drawPlaces2D();
+}
+
+/* ---------- Wikipedia / Wikidata (ছবি, ঐতিহাসিক স্থান, এলাকার তথ্য) ---------- */
+const EX={};let openPl=null,showAll=false,galList=[];
+const mem={},inflight={};
+function cached(key,fn){
+  if(key in mem)return Promise.resolve(mem[key]);
+  try{const s=localStorage.getItem('ee2_'+key);if(s!==null)return Promise.resolve(mem[key]=JSON.parse(s));}catch(e){}
+  if(inflight[key])return inflight[key];
+  const p=(async()=>{const v=await fn();mem[key]=v;try{localStorage.setItem('ee2_'+key,JSON.stringify(v));}catch(e){}return v;})();
+  inflight[key]=p;const done=()=>{delete inflight[key];};p.then(done,done);
+  return p;
+}
+async function getJ(url,timeout){
+  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),timeout||25000);
+  try{const r=await fetch(url,{signal:ctl.signal});if(!r.ok)throw new Error('HTTP '+r.status);return await r.json();}
+  finally{clearTimeout(t);}
+}
+async function sparql(q,timeout){
+  const j=await getJ('https://query.wikidata.org/sparql?format=json&query='+encodeURIComponent(q),timeout||40000);
+  return (j.results&&j.results.bindings)||[];
+}
+const strip=s=>(s||'').replace(/<[^>]*>/g,' ').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
+const cut=(t,n)=>{t=t||'';if(t.length<=n)return t;const s=t.slice(0,n),i=Math.max(s.lastIndexOf('।'),s.lastIndexOf('. '));return i>n*0.5?s.slice(0,i+1):s.trim()+'…';};
+const escRe=s=>String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const bny=y=>Number(y).toLocaleString('bn-BD',{useGrouping:false});
+const commonsImg=(u,w)=>u?u+(u.includes('?')?'&':'?')+'width='+w:'';
+
+async function wikiSummary(lang,title){
+  return cached(`ws_${lang}_${title}`,async()=>{
+    const r=await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(String(title).replace(/ /g,'_'))}?redirect=true`);
+    if(r.status===404)return null;
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    return{title:j.title||title,desc:j.description||'',extract:j.extract||'',img:(j.thumbnail&&j.thumbnail.source)||'',url:(j.content_urls&&j.content_urls.desktop&&j.content_urls.desktop.page)||'',qid:j.wikibase_item||'',type:j.type||''};
+  });
+}
+
+/* Wikidata: সর্বশেষ জনসংখ্যা/আয়তনের মান বাছাই */
+function latest(claims){
+  if(!claims||!claims.length)return null;
+  const ok=claims.filter(c=>c.mainsnak&&c.mainsnak.datavalue&&c.rank!=='deprecated');
+  if(!ok.length)return null;
+  const yr=c=>{const q=c.qualifiers&&c.qualifiers.P585;const t=q&&q[0]&&q[0].datavalue&&q[0].datavalue.value&&q[0].datavalue.value.time;return t?parseInt(t.slice(1,5),10):0;};
+  ok.sort((a,b)=>((b.rank==='preferred')-(a.rank==='preferred'))||(yr(b)-yr(a)));
+  const c=ok[0],v=c.mainsnak.datavalue.value;
+  return{v:+v.amount,y:yr(c)||null,unit:v.unit||''};
+}
+const AU={Q712226:1,Q35852:0.01,Q25343:1e-6,Q232291:2.589988,Q81292:0.00404686};
+function areaKm(cl){const c=latest(cl);if(!c)return null;const k=AU[String(c.unit).split('/').pop()];return k?c.v*k:null;}
+
+async function wikiForQid(qid){
+  return cached('wq_'+qid,async()=>{
+    const j=await getJ(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=sitelinks|labels|claims&sitefilter=bnwiki|enwiki&languages=bn|en&format=json&origin=*`);
+    const e=j.entities&&j.entities[qid];
+    if(!e||e.missing!==undefined)return null;
+    const sl=e.sitelinks||{},lb=e.labels||{},cl=e.claims||{};
+    const out={qid,bnLabel:(lb.bn&&lb.bn.value)||'',enLabel:(lb.en&&lb.en.value)||'',pop:latest(cl.P1082),area:areaKm(cl.P2046),sum:null};
+    let s=null,lang='bn';
+    if(sl.bnwiki)s=await wikiSummary('bn',sl.bnwiki.title).catch(()=>null);
+    if((!s||s.extract.length<40)&&sl.enwiki){lang='en';s=await wikiSummary('en',sl.enwiki.title).catch(()=>null);}
+    if(s)out.sum=Object.assign({},s,{lang});
+    return out;
+  });
+}
+
+async function countryMeta(f){
+  const iso=f.d.cca3;
+  return cached('cm_'+iso,async()=>{
+    const q=`SELECT ?c ?bn ?en WHERE{?c wdt:P298 "${iso}".OPTIONAL{?b schema:about ?c;schema:isPartOf <https://bn.wikipedia.org/>;schema:name ?bn}OPTIONAL{?e schema:about ?c;schema:isPartOf <https://en.wikipedia.org/>;schema:name ?en}}LIMIT 5`;
+    const r=await sparql(q,25000);
+    const x=r.find(b=>b.en)||r[0];
+    return x?{qid:x.c.value.split('/').pop(),bn:x.bn?x.bn.value:null,en:x.en?x.en.value:null}:{qid:null,bn:null,en:null};
+  });
+}
+
+/* দেশের ছবির গ্যালারি (Wikipedia নিবন্ধের ছবি, লাইসেন্সসহ) */
+async function gallery(title){
+  return cached('gl_'+title,async()=>{
+    const u=`https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1&generator=images&titles=${encodeURIComponent(title)}&gimlimit=80&prop=imageinfo&iiprop=url|mime|size|extmetadata&iiurlwidth=500&iiextmetadatafilter=Artist|LicenseShortName|ImageDescription`;
+    const j=await getJ(u);
+    const bad=/flag|map|coat[ _]of|emblem|logo|locator|icon|seal|symbol|banner|diagram|chart|signature|portrait|stamp|coin|banknote|crest/i;
+    return Object.values((j.query&&j.query.pages)||{})
+      .filter(p=>{const ii=p.imageinfo&&p.imageinfo[0];return ii&&/jpe?g/i.test(ii.mime||'')&&ii.width>=700&&!bad.test(p.title);})
+      .sort((a,b)=>(a.index||0)-(b.index||0)).slice(0,10)
+      .map(p=>{
+        const ii=p.imageinfo[0],md=ii.extmetadata||{},t=ii.thumburl||ii.url;
+        return{t,big:t.includes('/500px-')?t.replace('/500px-','/960px-'):ii.url,cap:cut(strip(md.ImageDescription&&md.ImageDescription.value),140),by:cut(strip(md.Artist&&md.Artist.value),60),lic:(md.LicenseShortName&&md.LicenseShortName.value)||'',page:ii.descriptionurl||''};
+      });
+  });
+}
+
+/* ঐতিহাসিক স্থান: UNESCO + জনপ্রিয় ঐতিহ্যবাহী স্থান (Wikidata) */
+const HT='wd:Q839954 wd:Q23413 wd:Q16560 wd:Q32815 wd:Q44539 wd:Q4989906 wd:Q1081138 wd:Q2065736 wd:Q57831 wd:Q16970 wd:Q5393308';
+function toPlaces(rows,unesco){
+  const m={};
+  rows.forEach(b=>{
+    const id=b.item.value.split('/').pop(),name=b.itemLabel&&b.itemLabel.value;
+    if(!name||/^Q\d+$/.test(name))return;
+    const o=m[id]||(m[id]={id,name,desc:b.itemDescription?b.itemDescription.value:'',unesco,lat:null,lng:null,img:'',sl:b.sl?+b.sl.value:0});
+    if(o.lat==null&&b.coord){const c=/Point\(([-\d.eE+]+) ([-\d.eE+]+)\)/.exec(b.coord.value);if(c){o.lng=+c[1];o.lat=+c[2];}}
+    if(!o.img&&b.image)o.img=b.image.value.replace(/^http:/,'https:');
+  });
+  return Object.values(m);
+}
+async function fetchUnesco(iso){
+  return cached('un_'+iso,async()=>{
+    const q=`SELECT ?item ?itemLabel ?itemDescription ?coord ?image WHERE{?c wdt:P298 "${iso}".?item wdt:P1435 wd:Q9259;wdt:P17 ?c.OPTIONAL{?item wdt:P625 ?coord}OPTIONAL{?item wdt:P18 ?image}SERVICE wikibase:label{bd:serviceParam wikibase:language "bn,en".}}`;
+    return toPlaces(await sparql(q,40000),true);
+  });
+}
+async function fetchMore(iso){
+  return cached('hm_'+iso,async()=>{
+    const q=`SELECT ?item ?itemLabel ?itemDescription ?coord ?image ?sl WHERE{?c wdt:P298 "${iso}".VALUES ?t{${HT}}?item wdt:P31 ?t;wdt:P17 ?c;wdt:P625 ?coord;wdt:P18 ?image;wikibase:sitelinks ?sl.FILTER(?sl>=10)SERVICE wikibase:label{bd:serviceParam wikibase:language "bn,en".}}ORDER BY DESC(?sl)LIMIT 30`;
+    return toPlaces(await sparql(q,55000),false).sort((a,b)=>b.sl-a.sl);
+  });
+}
+function ensurePlaces(f){
+  const iso=f.d.cca3,ex=EX[iso]||(EX[iso]={places:null,status:'idle'});
+  if(ex.status!=='idle')return ex.promise;
+  ex.status='loading';
+  ex.promise=(async()=>{
+    let un=[],more=[];ex.err=false;ex.moreErr=false;
+    try{un=await fetchUnesco(iso);}catch(e){ex.err=true;console.warn('UNESCO',e);}
+    ex.places=un.slice();ex.moreLoading=true;afterPlaces(f);
+    try{more=await fetchMore(iso);}catch(e){ex.moreErr=true;console.warn('heritage',e);}
+    const ids=new Set(un.map(p=>p.id));
+    ex.places=un.concat(more.filter(p=>!ids.has(p.id)));
+    ex.moreLoading=false;
+    ex.status=(ex.err&&ex.moreErr)?'idle':'done';
+    afterPlaces(f);
+  })();
+  return ex.promise;
+}
+function afterPlaces(f){
+  const ex=EX[f.d.cca3]||{},pl=(ex.places||[]).filter(p=>p.lat!=null);
+  if(selected===f){renderPlaces();world.pointsData(pl);}
+  if($('#modal').style.display==='flex'&&M.f===f)drawPlaces2D();
+}
+const placeHtml=p=>`<div class="place" data-id="${p.id}">${p.img?`<img class="th" loading="lazy" src="${esc(commonsImg(p.img,250))}" alt="">`:'<div class="th">🏛</div>'}<div><b>${esc(p.name)}</b><small>${p.unesco?'<span class="badge">UNESCO</span>':''}${esc(cut(p.desc,70))}</small></div></div><div class="pd" id="pd_${p.id}" style="display:none"></div>`;
+function renderPlaces(){
+  const f=selected;if(!f||!f.d)return;
+  const box=$('#placesBox');if(!box)return;
+  const ex=EX[f.d.cca3]||{},pl=ex.places||[];
+  let h='';
+  if(!pl.length){
+    h=ex.moreLoading||ex.status==='loading'?'<div class="muted">খোঁজা হচ্ছে…</div>':(ex.err&&ex.moreErr?'<div class="muted">স্থানের তথ্য আনা যায়নি (ইন্টারনেট বা Wikidata সমস্যা)। পরে আবার চেষ্টা করো।</div>':'<div class="muted">এই দেশের জন্য Wikidata-য় ছবিসহ কোনো ঐতিহাসিক স্থান পাওয়া যায়নি।</div>');
+    box.className='';box.innerHTML=h;return;
+  }
+  const list=showAll?pl:pl.slice(0,8);
+  h=list.map(placeHtml).join('');
+  if(pl.length>list.length)h+=`<button class="btn alt" id="morePl">আরও দেখাও (${bn(pl.length-list.length)})</button>`;
+  if(ex.moreLoading)h+='<div class="muted" style="margin-top:6px">আরও স্থান খোঁজা হচ্ছে…</div>';
+  h+='<div class="src">উৎস: Wikidata, Wikimedia Commons · 📍 গ্লোব ও ২D মানচিত্রেও এই স্থানগুলো চিহ্নিত</div>';
+  box.className='';box.innerHTML=h;
+  if(openPl)togglePlace(openPl,true);
+}
+function detailHtml(p,w,err){
+  const s=w&&w.sum;
+  const img=p.img?`<img src="${esc(commonsImg(p.img,500))}" alt="">`:(s&&s.img?`<img src="${esc(s.img)}" alt="">`:'');
+  const txt=s&&s.extract?esc(cut(s.extract,520)):(p.desc?esc(p.desc):(err?'বিস্তারিত আনা যায়নি।':'বিস্তারিত পাওয়া যায়নি।'));
+  const link=s&&s.url?`<a href="${esc(s.url)}" target="_blank" rel="noopener">Wikipedia${s.lang==='bn'?' (বাংলা)':' (English)'}</a>`:`<a href="https://www.wikidata.org/wiki/${p.id}" target="_blank" rel="noopener">Wikidata</a>`;
+  return `${img}<div>${txt}</div><div class="src">উৎস: ${link} · ছবি: Wikimedia Commons</div>`;
+}
+async function togglePlace(id,keep){
+  const f=selected;if(!f||!f.d)return;
+  const pd=$('#pd_'+id);if(!pd)return;
+  const p=((EX[f.d.cca3]||{}).places||[]).find(x=>x.id===id);if(!p)return;
+  const isOpen=pd.style.display!=='none';
+  if(isOpen&&!keep){pd.style.display='none';openPl=null;document.querySelectorAll('.place.on').forEach(x=>x.classList.remove('on'));return;}
+  openPl=id;
+  document.querySelectorAll('.pd').forEach(x=>{if(x!==pd)x.style.display='none';});
+  document.querySelectorAll('.place').forEach(x=>x.classList.toggle('on',x.dataset.id===id));
+  pd.style.display='block';pd.innerHTML='<span class="muted">লোড হচ্ছে…</span>';
+  if(!keep&&p.lat!=null){setRotate(false);world.pointOfView({lat:p.lat,lng:p.lng,altitude:0.45},1200);}
+  try{const w=await wikiForQid(id);if(openPl!==id)return;pd.innerHTML=detailHtml(p,w);}
+  catch(e){if(openPl===id)pd.innerHTML=detailHtml(p,null,true);}
+  if(!keep)pd.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+
+async function loadExtras(f){
+  const ex=$('#extras');if(!ex||!f.d)return;
+  ex.innerHTML=`<div class="card sec"><h4>📖 পরিচিতি</h4><div id="introBox" class="muted">লোড হচ্ছে…</div></div>
+  <div class="card sec"><h4>📷 ছবি</h4><div id="galBox" class="muted">লোড হচ্ছে…</div></div>
+  <div class="card sec"><h4>🏛 ঐতিহাসিক স্থান</h4><div id="placesBox" class="muted">লোড হচ্ছে…</div></div>`;
+  showAll=false;openPl=null;galList=[];
+  ensurePlaces(f);renderPlaces();
+  let meta;try{meta=await countryMeta(f);}catch(e){meta={qid:null,bn:null,en:null};}
+  if(selected!==f)return;
+  const en=meta.en||nameEn(f),bt=meta.bn||(f.d.translations&&f.d.translations.ben&&f.d.translations.ben.common)||'';
+  (async()=>{
+    try{
+      let s=null,lang='bn';
+      if(bt)s=await wikiSummary('bn',bt).catch(()=>null);
+      if(!s||s.extract.length<60){lang='en';s=await wikiSummary('en',en);}
+      const b=$('#introBox');if(selected!==f||!b)return;
+      b.className='intro';
+      b.innerHTML=s&&s.extract?`${esc(cut(s.extract,700))}<div class="src">উৎস: <a href="${esc(s.url)}" target="_blank" rel="noopener">Wikipedia ${lang==='bn'?'(বাংলা)':'(English — বাংলা পাতা পাওয়া যায়নি)'}</a></div>`:'পরিচিতি পাওয়া যায়নি।';
+    }catch(e){const b=$('#introBox');if(selected===f&&b)b.textContent='পরিচিতি আনা যায়নি (ইন্টারনেট সমস্যা)।';}
+  })();
+  (async()=>{
+    try{
+      const g=await gallery(en);
+      const b=$('#galBox');if(selected!==f||!b)return;
+      galList=g;b.className='';
+      b.innerHTML=g.length?`<div class="gal">${g.map((x,i)=>`<figure data-i="${i}"><img loading="lazy" src="${esc(x.t)}" alt="${esc(x.cap)}"></figure>`).join('')}</div><div class="src">ছবিতে ক্লিক করে বড় করো · উৎস: Wikipedia / Wikimedia Commons</div>`:'<span class="muted">এই দেশের জন্য ছবি পাওয়া যায়নি।</span>';
+    }catch(e){const b=$('#galBox');if(selected===f&&b)b.textContent='ছবি আনা যায়নি (ইন্টারনেট সমস্যা)।';}
+  })();
+}
+function openLb(i){
+  const g=galList[i];if(!g)return;
+  $('#lbi').src=g.big;
+  $('#lbc').innerHTML=`${esc(g.cap||'')}<br><small>${g.by?esc('© '+g.by+' · '):''}${esc(g.lic)}${g.page?` · <a href="${esc(g.page)}" target="_blank" rel="noopener" style="color:#4fb3ff">Commons</a>`:''}</small>`;
+  $('#lb').style.display='flex';
+}
+
+/* ---------- যেকোনো দেশের জেলা/অঞ্চল-তথ্য ---------- */
+const PREF2=/district|county|municipality|upazila|zila|department|prefecture|raion/i;
+const PREF1=/division|province|state|region|governorate|oblast|canton|voivodeship|territory/i;
+async function findRegion(name,f,lvl){
+  const country=nameEn(f),off=(f.d.name&&f.d.name.official)||'';
+  return cached(`rg_${f.d.cca3}_${lvl}_${name}`,async()=>{
+    const j=await getJ(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(name+' '+country)}&srlimit=6&format=json&origin=*`);
+    const titles=((j.query&&j.query.search)||[]).map(x=>x.title).slice(0,5);
+    const guess=lvl==='ADM2'?[name+' District']:[name+' Division',name+' Province',name+' State'];
+    const cands=[...new Set([...titles,...guess,name])].slice(0,8);
+    const sums=await Promise.all(cands.map(t=>wikiSummary('en',t).catch(()=>null)));
+    const nre=new RegExp(escRe(country)+(off?'|'+escRe(off):''),'i');
+    const first=name.split(/[\s-]/)[0].toLowerCase();
+    const pref=lvl==='ADM2'?PREF2:PREF1;
+    let best=null,bs=0;
+    sums.forEach(s=>{
+      if(!s||s.type==='disambiguation')return;
+      if(!nre.test(s.desc+' '+s.extract.slice(0,400)))return;
+      if(!s.title.toLowerCase().includes(first))return;
+      let sc=1;
+      const kind=s.desc.split(/\s+(?:in|of|within)\s+/i)[0];
+      if(pref.test(kind))sc+=3;
+      if(pref.test(s.title))sc+=2;
+      if(s.title.toLowerCase().startsWith(name.toLowerCase()))sc+=2;
+      if(sc>bs){bs=sc;best=s;}
+    });
+    return best?{title:best.title,qid:best.qid}:null;
+  });
+}
+function regionHtml(name,s,w){
+  const t=(w&&w.bnLabel)||name,en=(s&&s.title)||name,stats=[];
+  if(w&&w.pop)stats.push(`👥 জনসংখ্যা: <b>${bn(Math.round(w.pop.v))}</b>${w.pop.y?' ('+bny(w.pop.y)+' সালের)':''}`);
+  if(w&&w.area)stats.push(`📐 আয়তন: <b>${bn(Math.round(w.area*10)/10)} বর্গ কিমি</b>`);
+  const ws=w&&w.sum,img=(ws&&ws.img)||(s&&s.img)||'';
+  const txt=(ws&&ws.extract)||(s&&s.extract)||'',lang=(ws&&ws.lang)||'en',url=(ws&&ws.url)||(s&&s.url)||'';
+  return `<button class="x" id="mx">✕</button>${img?`<img src="${esc(img)}" alt="">`:''}<h4>${esc(t)}</h4><div class="muted">${esc(en)}</div>${stats.length?`<div style="margin:6px 0">${stats.join('<br>')}</div>`:''}<div>${esc(cut(txt,450))}</div><div class="src">উৎস: ${url?`<a href="${esc(url)}" target="_blank" rel="noopener">Wikipedia ${lang==='bn'?'(বাংলা)':'(English)'}</a>`:'Wikipedia'} · Wikidata<br>⚠ নাম মিলিয়ে স্বয়ংক্রিয়ভাবে খোঁজা হয়েছে, ভুল হতে পারে।</div>`;
+}
+async function openRegion(d,el){
+  const name=String(d.properties.shapeName||d.properties.name||'').trim();if(!name)return;
+  d3.selectAll('.adm.sel').classed('sel',false);d3.select(el).classed('sel',true);
+  const card=$('#mcard'),tok=++M.ctok;
+  card.style.display='block';
+  card.innerHTML=`<button class="x" id="mx">✕</button><h4>${esc(name)}</h4><span class="muted">Wikipedia থেকে খোঁজা হচ্ছে…</span>`;
+  try{
+    const r=await findRegion(name,M.f,M.level);
+    if(tok!==M.ctok)return;
+    if(!r){card.innerHTML=`<button class="x" id="mx">✕</button><h4>${esc(name)}</h4><div class="muted">এই এলাকার জন্য নির্ভরযোগ্য Wikipedia-পাতা মেলেনি।</div>`;return;}
+    let w=null;try{w=r.qid?await wikiForQid(r.qid):null;}catch(e){}
+    const s=await wikiSummary('en',r.title).catch(()=>null);
+    if(tok!==M.ctok)return;
+    card.innerHTML=regionHtml(name,s,w);
+  }catch(e){
+    if(tok!==M.ctok)return;
+    console.warn(e);
+    card.innerHTML=`<button class="x" id="mx">✕</button><h4>${esc(name)}</h4><div class="muted">তথ্য আনা যায়নি (ইন্টারনেট সমস্যা)।</div>`;
+  }
+}
+async function showPlaceCard(p){
+  const card=$('#mcard'),tok=++M.ctok;
+  d3.selectAll('.adm.sel').classed('sel',false);
+  card.style.display='block';
+  card.innerHTML=`<button class="x" id="mx">✕</button>${p.img?`<img src="${esc(commonsImg(p.img,500))}" alt="">`:''}<h4>${esc(p.name)}</h4><div class="muted">${p.unesco?'UNESCO বিশ্ব ঐতিহ্য · ':''}${esc(p.desc||'')}</div><div class="muted" id="pcx" style="margin-top:6px">বিস্তারিত লোড হচ্ছে…</div>`;
+  try{
+    const w=await wikiForQid(p.id);if(tok!==M.ctok)return;
+    const s=w&&w.sum,box=$('#pcx');if(!box)return;
+    box.className='';
+    box.innerHTML=s&&s.extract?`${esc(cut(s.extract,450))}<div class="src">উৎস: <a href="${esc(s.url)}" target="_blank" rel="noopener">Wikipedia ${s.lang==='bn'?'(বাংলা)':'(English)'}</a></div>`:'বিস্তারিত পাওয়া যায়নি।';
+  }catch(e){const box=$('#pcx');if(tok===M.ctok&&box)box.textContent='বিস্তারিত আনা যায়নি।';}
+}
+function mtipShow(e,text){
+  const r=$('#mapArea').getBoundingClientRect(),t=$('#mtip');
+  t.style.display='block';t.style.left=(e.clientX-r.left+14)+'px';t.style.top=(e.clientY-r.top+14)+'px';t.textContent=text;
+}
+function drawPlaces2D(){
+  if(!M.g||!M.proj||!M.f)return;
+  M.g.selectAll('circle.pl').remove();
+  // Guard every level: country metadata may be missing when external APIs fail.
+  const country=M.f.d;
+  const iso=country&&typeof country.cca3==='string'?country.cca3:null;
+  if(!iso){console.warn('স্থান দেখানো যাচ্ছে না: নির্বাচিত দেশের ISO-3 কোড অনুপস্থিত');return;}
+  const pl=((EX[iso]||{}).places||[]).filter(p=>p.lat!=null);
+  if(!M.showPl||!pl.length)return;
+  M.g.selectAll('circle.pl').data(pl).join('circle').attr('class','pl')
+    .attr('cx',p=>M.proj([p.lng,p.lat])[0]).attr('cy',p=>M.proj([p.lng,p.lat])[1])
+    .attr('r',5/M.k).attr('stroke-width',1.5/M.k).attr('stroke','#fff')
+    .attr('fill',p=>p.unesco?'#ff7ad9':'#7dffb3').style('cursor','pointer')
+    .on('mousemove',(e,p)=>mtipShow(e,p.name))
+    .on('mouseleave',()=>{$('#mtip').style.display='none';})
+    .on('click',(e,p)=>{e.stopPropagation();showPlaceCard(p);});
+}
+
+/* ---------- সবকিছু জোড়া ---------- */
+function bind(){
+  $('#bRot').onclick=()=>setRotate(!rotating);
+  $('#bNight').onclick=e=>{night=!night;e.currentTarget.classList.toggle('on',night);e.currentTarget.textContent=night?'☀️ দিন':'🌙 রাত';world.globeImageUrl(IMG+(night?'earth-night.jpg':'earth-blue-marble.jpg'));};
+  $('#sColor').onchange=e=>{colorMode=e.target.value;refresh();legend();};
+  $('#bRand').onclick=()=>{const p=features.filter(f=>f.d);select(p[Math.random()*p.length|0]);};
+  $('#bHome').onclick=()=>{const f=byCca3.BGD&&byCca3.BGD.f;if(f)select(f);};
+  document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+  $('#content').addEventListener('click',e=>{const c=e.target.closest('[data-code]');if(c){const d=byCca3[c.dataset.code];if(d&&d.f)select(d.f);}});
+  $('#mclose').onclick=close2D;
+  $('#lvP').onclick=e=>{M.showPl=!M.showPl;e.currentTarget.classList.toggle('on',M.showPl);drawPlaces2D();};
+  $('#mcard').addEventListener('click',e=>{if(e.target.id==='mx'){$('#mcard').style.display='none';d3.selectAll('.adm.sel').classed('sel',false);M.ctok++;}});
+  $('#content').addEventListener('click',e=>{
+    const pl=e.target.closest('.place');if(pl){togglePlace(pl.dataset.id);return;}
+    const fg=e.target.closest('.gal figure');if(fg){openLb(+fg.dataset.i);return;}
+    if(e.target.closest('#morePl')){showAll=true;renderPlaces();}
+  });
+  $('#lb').onclick=e=>{if(e.target.tagName!=='A')$('#lb').style.display='none';};
+  $('#modal').addEventListener('click',e=>{if(e.target.id==='modal')close2D();});
+  addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('#lb').style.display==='flex'){$('#lb').style.display='none';return;}close2D();});
+  $('#mdiagCopy').onclick=async()=>{const t=$('#mdiagPre').textContent;try{await navigator.clipboard.writeText(t);$('#mdiagCopy').textContent='✔ কপি হয়েছে';}catch(e){const r=document.createRange();r.selectNodeContents($('#mdiagPre'));const sel=getSelection();sel.removeAllRanges();sel.addRange(r);$('#mdiagCopy').textContent='নির্বাচিত — Ctrl+C চাপো';}};
+  $('#lv1').onclick=()=>{M.fell=null;loadLevel('ADM1',false);};
+  $('#lv2').onclick=()=>{M.fell=null;loadLevel('ADM2',false);};
+  $('#zin').onclick=()=>M.svg&&M.svg.transition().duration(250).call(M.zoom.scaleBy,1.6);
+  $('#zout').onclick=()=>M.svg&&M.svg.transition().duration(250).call(M.zoom.scaleBy,1/1.6);
+  $('#zfit').onclick=()=>M.svg&&M.svg.transition().duration(350).call(M.zoom.transform,d3.zoomIdentity);
+}
+
+(async function main(){
+  try{
+    if(typeof Globe==='undefined'||typeof d3==='undefined'||typeof topojson==='undefined')throw new Error('লাইব্রেরি লোড হয়নি');
+    await loadData();
+    initGlobe();bind();setupSearch();renderInfo();
+    $('#loading').style.opacity=0;setTimeout(()=>$('#loading').remove(),600);
+  }catch(e){
+    console.error(e);
+    $('#loading').innerHTML='<div style="font-size:42px">😥</div><div>লোড করা যায়নি। ইন্টারনেট চালু আছে কি না দেখে পেজ রিলোড করো।</div><small style="color:#8fa0c8">'+esc(e.message)+'</small>';
+  }
+})();
+})();
+</script>
+</body>
+</html>

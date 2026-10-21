@@ -1,1 +1,125 @@
-{% extends 'base.html' %}{% block content %}<section class="hero"><div class="wrap hero-grid"><div><span class="pill">শ্রেণি ১–১২ • অনুশীলন • কুইজ • ব্যাজ • গেম</span><h1>{{settings.hero_title}}</h1><p class="lead">{{settings.hero_subtitle}}</p><p>{{settings.purpose}}</p><div class="actions"><a class="btn primary" href="{{url_for('register')}}">শেখা শুরু করি</a><a class="btn" href="#about">কেন এই প্ল্যাটফর্ম?</a></div></div><div class="characters">{% if settings.hero_image_url %}<div class="hero-image-wrap"><img src="{{settings.hero_image_url}}" alt="{{settings.site_name}} Hero"></div>{% else %}<div>🌸<b>জারা</b><small>চলো অনুশীলন করি!</small></div><div>⭐<b>সারা</b><small>তুমি পারবে!</small></div>{% endif %}</div></div></section><section id="classes" class="wrap section"><div class="section-title"><div><h2>তোমার শ্রেণি বেছে নাও</h2><p class="muted">Registration-এর পর Practice Class বদলে শ্রেণি ১–১২-এর যেকোনো available content অনুশীলন করা যাবে।</p></div></div><div class="grid">{% for c in classes %}<div class="card classcard"><span>🎓</span><h3>{{c.name}}</h3><p>বিষয়ভিত্তিক প্রশ্ন ও Quiz</p><a class="btn small" href="{{url_for('register')}}">নিবন্ধন</a></div>{% endfor %}</div></section><section class="wrap section"><h2>শেখার জোন</h2><div class="grid">{% for s in subjects %}<div class="card"><div class="icon">{{s.icon}}</div><h3>{{s.name}}</h3><p>Chapter → Question → Quiz</p></div>{% endfor %}</div></section><section id="about" class="wrap section two"><div class="card"><h2>ওয়েবসাইটের উদ্দেশ্য</h2><p>{{settings.purpose}}</p></div><div class="card"><h2>ব্যবহার উপযোগিতা</h2><p>{{settings.about}}</p><p>নিয়মিত অনুশীলনের মাধ্যমে নিজের XP, Level, Badge ও কুইজ ফলাফল ট্র্যাক করা যাবে।</p></div></section>{% if games %}<section class="wrap section"><div class="section-title"><div><h2>🎮 Game Zone</h2><p class="muted">খেলতে খেলতে মনোযোগ, গণনা, স্মৃতি ও শব্দচর্চা করো।</p></div><a class="btn small" href="{{url_for('games')}}">সব গেম দেখো</a></div><div class="grid">{% for g in games[:4] %}<div class="card game-card"><div class="game-icon">{% if 'গণিত' in g.title %}➗{% elif 'সংখ্যা' in g.title %}🔢{% elif 'স্মৃতি' in g.title %}🧠{% elif 'শব্দ' in g.title %}🔤{% else %}🌍{% endif %}</div><div class="quiz-chip">Educational Game</div><h3>{{g.title}}</h3><p>{{g.description or 'খেলা ও শেখার মজার অনুশীলন।'}}</p><a class="btn primary small" href="{{url_for('game_play',slug=g.slug)}}">গেম শুরু</a></div>{% endfor %}</div></section>{% endif %}{% if notices %}<section class="wrap section"><h2>📣 সর্বশেষ নোটিশ</h2>{% for n in notices %}<div class="notice"><b>{{n.title}}</b><p>{{n.body}}</p></div>{% endfor %}</section>{% endif %}{% if gallery %}<section class="wrap section"><div class="section-title"><div><h2>🖼️ শেখার গ্যালারি</h2><p class="muted">Admin-এর যোগ করা শিক্ষামূলক ছবি।</p></div></div><div class="media-grid">{% for m in gallery %}<figure class="card media-card"><img src="{{m.url}}" alt="{{m.alt_text or m.title}}" loading="lazy"><figcaption>{{m.title}}</figcaption></figure>{% endfor %}</div></section>{% endif %}{% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+<!-- HERO -->
+<section class="h-hero">
+  <div class="wrap h-hero-grid">
+    <div>
+      <span class="h-eyebrow"><i></i> শ্রেণি ১–১২ • অনুশীলন • কুইজ • ব্যাজ • গেম</span>
+      <h1>{% if settings.hero_title %}{{ settings.hero_title }}{% else %}শেখা হোক <span class="grad-text">আনন্দের</span>{% endif %}</h1>
+      <p class="h-lead">{{ settings.hero_subtitle }}</p>
+      <p class="h-purpose">{{ settings.purpose }}</p>
+      <div class="h-actions">
+        <a class="btn primary lg" href="{{ url_for('register') }}">🚀 শেখা শুরু করি</a>
+        <a class="btn ghost lg" href="{{ url_for('explore') }}">🌍 পৃথিবী ঘুরে দেখি</a>
+      </div>
+      <div class="h-trust"><span>✅ বিনামূল্যে নিবন্ধন</span><span>⭐ XP ও ব্যাজ</span><span>📱 মোবাইল-বান্ধব</span></div>
+    </div>
+    <div class="h-visual">
+      <div class="h-blob"></div>
+      <span class="h-float f1">📚</span><span class="h-float f2">🏆</span><span class="h-float f3">🧮</span><span class="h-float f4">🎨</span>
+      {% if settings.hero_image_url %}
+        <div class="h-heroimg"><img src="{{ settings.hero_image_url }}" alt="{{ settings.site_name }}"></div>
+      {% else %}
+        <div class="h-chars">
+          <div class="h-char">🌸<b>জারা</b><small>চলো অনুশীলন করি!</small></div>
+          <div class="h-char">⭐<b>সারা</b><small>তুমি পারবে!</small></div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="h-stats"><div class="wrap">
+  <div class="h-stats-grid">
+    <div class="h-stat"><b>{{ stats.questions }}+</b><span>প্রশ্ন</span></div>
+    <div class="h-stat"><b>{{ stats.quizzes }}</b><span>কুইজ</span></div>
+    <div class="h-stat"><b>{{ stats.students }}+</b><span>শিক্ষার্থী</span></div>
+    <div class="h-stat"><b>{{ stats.games }}</b><span>শিক্ষামূলক গেম</span></div>
+  </div>
+</div></section>
+
+<!-- CLASSES -->
+<section id="classes" class="wrap h-sec">
+  <div class="h-head"><span class="tag">শ্রেণি</span><h2>তোমার শ্রেণি বেছে নাও</h2><p>নিবন্ধনের পর Practice Class বদলে শ্রেণি ১–১২-এর যেকোনো কনটেন্ট অনুশীলন করা যাবে।</p></div>
+  <div class="stage-row">
+    {% for c in classes %}
+    {% set n = loop.index %}
+    <a class="cls {% if n<=5 %}st-0{% elif n<=8 %}st-1{% elif n<=10 %}st-2{% else %}st-3{% endif %}" href="{{ url_for('register') }}">
+      <span class="no">{{ n }}</span><b>{{ c.name }}</b><small>বিষয়ভিত্তিক প্রশ্ন ও কুইজ</small><span class="go">নিবন্ধন →</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- SUBJECTS -->
+<section class="wrap h-sec">
+  <div class="h-head"><span class="tag">শেখার জোন</span><h2>বিষয়ের জগতে ডুব দাও</h2><p>Chapter → Question → Quiz — ধাপে ধাপে এগিয়ে চলো।</p></div>
+  <div class="subj-grid">
+    {% for s in subjects %}
+    <div class="subj sj-{{ loop.index0 % 6 }}"><div class="ic">{{ s.icon }}</div><h3>{{ s.name }}</h3><p>Chapter → Question → Quiz</p></div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- EARTH EXPLORER -->
+<section class="wrap h-earth">
+  <div class="earth-card">
+    <div>
+      <span class="tag">🌍 নতুন • Earth Explorer</span>
+      <h2>৩D পৃথিবী ঘুরে শেখো</h2>
+      <p>ঘোরানো যায় এমন ৩D গ্লোবে দেশ, মানচিত্র ও জেলা চিনে নাও। কুইজ মোডে নিজের ভূগোল-জ্ঞান যাচাই করো — সবটাই বাংলায়।</p>
+      <div class="earth-feats"><span>🗺️ ইন্টারঅ্যাকটিভ গ্লোব</span><span>🧩 কুইজ মোড</span><span>📍 জেলা মানচিত্র</span><span>🇧🇩 বাংলা ইন্টারফেস</span></div>
+      <a class="btn earth lg" href="{{ url_for('explore') }}">🚀 এক্সপ্লোর শুরু করো</a>
+    </div>
+    <div class="globe-wrap"><div class="globe-css" aria-hidden="true"></div></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="wrap h-sec">
+  <div class="h-head"><span class="tag">কীভাবে কাজ করে</span><h2>মাত্র ৩ ধাপে শুরু</h2></div>
+  <div class="steps">
+    <div class="step"><h3>নিবন্ধন করো</h3><p>নাম ও শ্রেণি দিয়ে সহজে একটি Student ID তৈরি করো।</p></div>
+    <div class="step"><h3>অনুশীলন করো</h3><p>বিষয় ও অধ্যায় বেছে প্রশ্ন সমাধান করো, কুইজে অংশ নাও।</p></div>
+    <div class="step"><h3>পুরস্কার জিতো</h3><p>XP, Level ও Badge অর্জন করে নিজের অগ্রগতি দেখো।</p></div>
+  </div>
+</section>
+
+{% if games %}
+<section class="wrap h-sec">
+  <div class="h-head"><span class="tag">🎮 Game Zone</span><h2>খেলতে খেলতে শেখো</h2><p>মনোযোগ, গণনা, স্মৃতি ও শব্দচর্চার মজার খেলা।</p></div>
+  <div class="game-grid">
+    {% for g in games[:4] %}
+    <div class="h-game"><div class="gi">{% if 'গণিত' in g.title %}➗{% elif 'সংখ্যা' in g.title %}🔢{% elif 'স্মৃতি' in g.title %}🧠{% elif 'শব্দ' in g.title %}🔤{% else %}🌍{% endif %}</div><h3>{{ g.title }}</h3><p>{{ g.description or 'খেলা ও শেখার মজার অনুশীলন।' }}</p><a class="btn primary small" href="{{ url_for('game_play', slug=g.slug) }}">গেম শুরু</a></div>
+    {% endfor %}
+  </div>
+  <div style="text-align:center;margin-top:20px"><a class="btn ghost" href="{{ url_for('games') }}">সব গেম দেখো →</a></div>
+</section>
+{% endif %}
+
+{% if notices %}
+<section class="wrap h-sec">
+  <div class="h-head"><span class="tag">নোটিশ</span><h2>📣 সর্বশেষ খবর</h2></div>
+  <div class="nt-list">{% for n in notices %}<div class="nt"><span class="ni">📌</span><div><b>{{ n.title }}</b><p>{{ n.body }}</p></div></div>{% endfor %}</div>
+</section>
+{% endif %}
+
+{% if gallery %}
+<section class="wrap h-sec">
+  <div class="h-head"><span class="tag">গ্যালারি</span><h2>🖼️ শেখার গ্যালারি</h2></div>
+  <div class="media-grid">{% for m in gallery %}<figure class="card media-card"><img src="{{ m.url }}" alt="{{ m.alt_text or m.title }}" loading="lazy"><figcaption>{{ m.title }}</figcaption></figure>{% endfor %}</div>
+</section>
+{% endif %}
+
+<section id="about" class="wrap h-sec">
+  <div class="about-grid">
+    <div class="about-card"><h3>🎯 ওয়েবসাইটের উদ্দেশ্য</h3><p>{{ settings.purpose }}</p></div>
+    <div class="about-card"><h3>💡 ব্যবহার উপযোগিতা</h3><p>{{ settings.about }}</p><p>নিয়মিত অনুশীলনের মাধ্যমে নিজের XP, Level, Badge ও কুইজ ফলাফল ট্র্যাক করা যাবে।</p></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="h-cta"><h2>আজই শেখার যাত্রা শুরু করো!</h2><p>বিনামূল্যে নিবন্ধন করে অনুশীলন, কুইজ আর গেমের মজা নাও।</p><a class="btn lg" href="{{ url_for('register') }}">🌸 এখনই নিবন্ধন করো</a></div>
+</section>
+{% endblock %}
