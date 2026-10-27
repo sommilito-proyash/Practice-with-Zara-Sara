@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}{{class_row.name}} — প্র্যাকটিস{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <div class="section-title"><div><span class="pill">নিবন্ধন ছাড়াই অনুশীলন</span><h1>📚 {{class_row.name}} প্র্যাকটিস জোন</h1><p class="lead">বিষয় ও অধ্যায় বেছে নাও, প্রশ্নের উত্তর দাও এবং সঙ্গে সঙ্গে সঠিক উত্তর দেখে শেখো।</p></div><a class="btn" href="{{url_for('home')}}">← হোম পেজ</a></div>
+  <div class="card practice-panel"><div><h2>বিষয় ও অধ্যায় বেছে নাও</h2><p class="muted">এই সুবিধাটি শ্রেণি ১–৪-এর জন্য নিবন্ধন ছাড়াই খোলা।</p></div>
+    <form method="get" class="filterbar student-filter" action="{{url_for('guest_practice',class_no=class_no)}}">
+      <label>বিষয়<select name="subject_id" id="guestSubject"><option value="">সব বিষয়</option>{% for s in subjects %}<option value="{{s.id}}" {% if selected_subject|string==s.id|string %}selected{% endif %}>{{s.icon}} {{s.name}}</option>{% endfor %}</select></label>
+      <label>অধ্যায়<select name="chapter_id" id="guestChapter"><option value="">সব অধ্যায়</option>{% for ch in chapters %}<option value="{{ch.id}}" {% if selected_chapter|string==ch.id|string %}selected{% endif %}>{{ch.title}}</option>{% endfor %}</select></label>
+      <div class="filter-actions"><button class="btn primary">প্রশ্ন দেখাও</button><a class="btn" href="{{url_for('guest_practice',class_no=class_no)}}">Reset</a></div>
+    </form>
+  </div>
+
+  {% if quizzes %}
+  <div class="section-title top-gap"><div><h2>🎯 অনুশীলনী কুইজ</h2><p class="muted">ফলাফল জমা না রেখেই কুইজ দিয়ে নিজের উত্তর যাচাই করতে পারবে।</p></div></div>
+  <div class="grid">{% for q in quizzes %}<div class="card quiz-card"><div class="quiz-chip">{{q.subject_name or 'মিশ্র বিষয়'}}{% if q.chapter_name %} · {{q.chapter_name}}{% endif %}</div><h3>{{q.title}}</h3><p>{{q.description or 'অনুশীলন শুরু করো।'}}</p><div class="quiz-meta"><span>📝 {{q.question_pool_count}} প্রশ্ন</span><span>⏱️ {{q.time_limit or '∞'}}{% if q.time_limit %} মিনিট{% endif %}</span></div><a class="btn small primary" href="{{url_for('guest_practice_quiz',class_no=class_no,qid=q.id)}}">কুইজ শুরু</a></div>{% endfor %}</div>
+  {% endif %}
+
+  <div class="section-title top-gap"><div><h2>✏️ প্রশ্ন অনুশীলন</h2><p class="muted">প্রতিটি প্রশ্নে উত্তর বেছে “উত্তর দেখো” চাপলে সঠিক উত্তর ও ব্যাখ্যা দেখা যাবে।</p></div><span class="pill">{{questions|length}}টি প্রশ্ন</span></div>
+  {% if questions %}
+  <div class="grid guest-question-grid">{% for q in questions %}<article class="card guest-question" data-question-id="{{q.id}}"><div class="quiz-chip">{{q.subject_name or 'বিষয়'}}{% if q.chapter_title %} · {{q.chapter_title}}{% endif %}</div><h3>{{loop.index}}. {{q.question_text}}</h3>
+    {% if options[q.id] %}<div class="guest-options">{% for o in options[q.id] %}<label><input type="radio" name="guest_q_{{q.id}}" value="{{o.option_text}}"> <span>{{o.option_text}}</span></label>{% endfor %}</div>{% else %}<p class="muted">এই প্রশ্নের বিকল্প এখনো যোগ করা হয়নি।</p>{% endif %}
+    <button type="button" class="btn small" data-answer="{{correct_answers.get(q.id,'')}}" data-explanation="{{q.explanation or 'আরও ভালোভাবে বুঝতে অধ্যায়ের বিষয়বস্তু আবার দেখো।'}}" onclick="revealGuestAnswer(this)">উত্তর দেখো</button><div class="guest-answer" hidden aria-live="polite"></div>
+  </article>{% endfor %}</div>
+  {% else %}<div class="card section-card"><h2>এই ফিল্টারে প্রশ্ন পাওয়া যায়নি</h2><p>অন্য বিষয়/অধ্যায় বেছে দেখো। অ্যাডমিন Question Bank-এ এই শ্রেণির জন্য প্রশ্ন যোগ করলে এখানেও দেখা যাবে।</p><a class="btn primary" href="{{url_for('games')}}">এখন শিক্ষামূলক গেম খেলি</a></div>{% endif %}
+  <div class="card section-card"><h2>🔐 শ্রেণি ৫–১২-এ যেতে চাও?</h2><p>ওই শ্রেণিগুলোর একাডেমিক প্র্যাকটিসের জন্য নিবন্ধন করে Admin অনুমোদনের অপেক্ষা করতে হবে।</p><a class="btn primary" href="{{url_for('register')}}">নিবন্ধন করুন</a><a class="btn" href="{{url_for('games')}}">Game Zone</a></div>
+</div>
+<script>
+function revealGuestAnswer(button){const card=button.closest('.guest-question');const answer=card.querySelector('.guest-answer');const correct=button.dataset.answer||'সঠিক উত্তর এখনো নির্ধারণ করা হয়নি।';const selected=card.querySelector('input[type="radio"]:checked');const isCorrect=selected&&selected.value===correct;answer.hidden=false;answer.className='guest-answer notice compact-notice';answer.textContent=(selected?(isCorrect?'✅ সঠিক! ':'❌ আবার চেষ্টা করো। '):'💡 উত্তর: ')+`সঠিক উত্তর: ${correct}. `+(button.dataset.explanation||'');}
+const guestSubject=document.getElementById('guestSubject'),guestChapter=document.getElementById('guestChapter');
+async function loadGuestChapters(){if(!guestChapter)return;const sid=guestSubject.value;const res=await fetch('{{url_for("api_chapters")}}?class_id={{class_row.id}}&subject_id='+encodeURIComponent(sid));const data=await res.json();const selected='{{selected_chapter}}';guestChapter.innerHTML='<option value="">সব অধ্যায়</option>'+data.chapters.map(c=>`<option value="${c.id}" ${String(c.id)===selected?'selected':''}>${c.title}</option>`).join('');}
+guestSubject?.addEventListener('change',loadGuestChapters);
+</script>
+{% endblock %}

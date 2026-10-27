@@ -9,10 +9,10 @@
       <p class="h-lead">{{ settings.hero_subtitle }}</p>
       <p class="h-purpose">{{ settings.purpose }}</p>
       <div class="h-actions">
-        <a class="btn primary lg" href="{{ url_for('register') }}">🚀 শেখা শুরু করি</a>
+        <a class="btn primary lg" href="#classes">🚀 শ্রেণি বেছে শুরু করি</a>
         <a class="btn ghost lg" href="{{ url_for('explore') }}">🌍 পৃথিবী ঘুরে দেখি</a>
       </div>
-      <div class="h-trust"><span>✅ বিনামূল্যে নিবন্ধন</span><span>⭐ XP ও ব্যাজ</span><span>📱 মোবাইল-বান্ধব</span></div>
+      <div class="h-trust"><span>✅ শ্রেণি ১–৪-এ নিবন্ধন ছাড়াই</span><span>⭐ XP ও ব্যাজ</span><span>📱 মোবাইল-বান্ধব</span></div>
     </div>
     <div class="h-visual">
       <div class="h-blob"></div>
@@ -41,12 +41,12 @@
 
 <!-- CLASSES -->
 <section id="classes" class="wrap h-sec">
-  <div class="h-head"><span class="tag">শ্রেণি</span><h2>তোমার শ্রেণি বেছে নাও</h2><p>নিবন্ধনের পর Practice Class বদলে শ্রেণি ১–১২-এর যেকোনো কনটেন্ট অনুশীলন করা যাবে।</p></div>
+  <div class="h-head"><span class="tag">শ্রেণি</span><h2>তোমার শ্রেণি বেছে নাও</h2><p>শ্রেণি ১–৪ থেকে সরাসরি অনুশীলন শুরু করো। শ্রেণি ৫–১২-এর জন্য নিবন্ধন ও Admin অনুমোদন প্রয়োজন।</p></div>
   <div class="stage-row">
     {% for c in classes %}
     {% set n = loop.index %}
-    <a class="cls {% if n<=5 %}st-0{% elif n<=8 %}st-1{% elif n<=10 %}st-2{% else %}st-3{% endif %}" href="{{ url_for('register') }}">
-      <span class="no">{{ n }}</span><b>{{ c.name }}</b><small>বিষয়ভিত্তিক প্রশ্ন ও কুইজ</small><span class="go">নিবন্ধন →</span>
+    <a class="cls {% if n<=5 %}st-0{% elif n<=8 %}st-1{% elif n<=10 %}st-2{% else %}st-3{% endif %}" href="{{ url_for('class_entry', class_no=n) }}">
+      <span class="no">{{ n }}</span><b>{{ c.name }}</b><small>বিষয়ভিত্তিক প্রশ্ন ও কুইজ</small><span class="go">{{ 'সরাসরি প্র্যাকটিস →' if n<=4 else 'নিবন্ধন প্রয়োজন →' }}</span>
     </a>
     {% endfor %}
   </div>
@@ -78,9 +78,9 @@
 
 <!-- HOW IT WORKS -->
 <section class="wrap h-sec">
-  <div class="h-head"><span class="tag">কীভাবে কাজ করে</span><h2>মাত্র ৩ ধাপে শুরু</h2></div>
+  <div class="h-head"><span class="tag">কীভাবে কাজ করে</span><h2>সহজেই শেখা শুরু</h2></div>
   <div class="steps">
-    <div class="step"><h3>নিবন্ধন করো</h3><p>নাম ও শ্রেণি দিয়ে সহজে একটি Student ID তৈরি করো।</p></div>
+    <div class="step"><h3>শ্রেণি বেছে নাও</h3><p>শ্রেণি ১–৪ সরাসরি অনুশীলন; শ্রেণি ৫–১২-এর জন্য নিবন্ধন ও অনুমোদন।</p></div>
     <div class="step"><h3>অনুশীলন করো</h3><p>বিষয় ও অধ্যায় বেছে প্রশ্ন সমাধান করো, কুইজে অংশ নাও।</p></div>
     <div class="step"><h3>পুরস্কার জিতো</h3><p>XP, Level ও Badge অর্জন করে নিজের অগ্রগতি দেখো।</p></div>
   </div>
@@ -91,7 +91,7 @@
   <div class="h-head"><span class="tag">🎮 Game Zone</span><h2>খেলতে খেলতে শেখো</h2><p>মনোযোগ, গণনা, স্মৃতি ও শব্দচর্চার মজার খেলা।</p></div>
   <div class="game-grid">
     {% for g in games[:4] %}
-    <div class="h-game"><div class="gi">{% if 'গণিত' in g.title %}➗{% elif 'সংখ্যা' in g.title %}🔢{% elif 'স্মৃতি' in g.title %}🧠{% elif 'শব্দ' in g.title %}🔤{% else %}🌍{% endif %}</div><h3>{{ g.title }}</h3><p>{{ g.description or 'খেলা ও শেখার মজার অনুশীলন।' }}</p><a class="btn primary small" href="{{ url_for('game_play', slug=g.slug) }}">গেম শুরু</a></div>
+    <div class="h-game"><div class="gi">{% if 'গণিত' in g.title %}➗{% elif 'সংখ্যা' in g.title %}🔢{% elif 'স্মৃতি' in g.title %}🧠{% elif 'শব্দ' in g.title %}🔤{% elif 'ভিন্নটি' in g.title %}🔎{% elif 'যুক্তির' in g.title %}🧩{% elif 'বাংলা' in g.title %}📖{% elif 'দেশ-দুনিয়া' in g.title %}🌏{% elif 'বানান' in g.title %}✍️{% else %}🌍{% endif %}</div><h3>{{ g.title }}</h3><p>{{ g.description or 'খেলা ও শেখার মজার অনুশীলন।' }}</p><a class="btn primary small" href="{{ url_for('game_play', slug=g.slug) }}">গেম শুরু</a></div>
     {% endfor %}
   </div>
   <div style="text-align:center;margin-top:20px"><a class="btn ghost" href="{{ url_for('games') }}">সব গেম দেখো →</a></div>
@@ -120,6 +120,6 @@
 </section>
 
 <section class="wrap">
-  <div class="h-cta"><h2>আজই শেখার যাত্রা শুরু করো!</h2><p>বিনামূল্যে নিবন্ধন করে অনুশীলন, কুইজ আর গেমের মজা নাও।</p><a class="btn lg" href="{{ url_for('register') }}">🌸 এখনই নিবন্ধন করো</a></div>
+  <div class="h-cta"><h2>আজই শেখার যাত্রা শুরু করো!</h2><p>শ্রেণি ১–৪-এ নিবন্ধন ছাড়াই শুরু করো; শ্রেণি ৫–১২-এর জন্য আবেদন করে Admin অনুমোদনের অপেক্ষা করো।</p><a class="btn lg" href="{{ url_for('register') }}">🌸 এখনই নিবন্ধন করো</a></div>
 </section>
 {% endblock %}

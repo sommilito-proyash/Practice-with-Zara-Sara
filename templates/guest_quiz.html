@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}{{quiz.title}} — অতিথি কুইজ{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <div class="section-title"><div><span class="pill">{{'ফলাফল' if submitted else 'নিবন্ধন ছাড়াই কুইজ'}}</span><h1>{{quiz.title}}</h1><p class="lead">{{quiz.description or (quiz.subject_name or 'অনুশীলন কুইজ')}}</p></div><a class="btn" href="{{url_for('guest_practice',class_no=class_no)}}">← শ্রেণি {{class_no}} প্র্যাকটিস</a></div>
+  {% if submitted %}
+  <div class="card section-card center"><div class="big">{% if total and score/total>=0.8 %}🏆{% elif score %}⭐{% else %}💪{% endif %}</div><h2>তোমার ফল: {{score}} / {{total}}</h2><p>{{'চমৎকার! দারুণ করেছ।' if total and score/total>=0.8 else 'ভালো চেষ্টা! ভুলগুলো দেখে আবার অনুশীলন করো।'}}</p><a class="btn primary" href="{{url_for('guest_practice_quiz',class_no=class_no,qid=quiz.id)}}">আবার চেষ্টা করি</a><a class="btn" href="{{url_for('guest_practice',class_no=class_no)}}">অন্য প্রশ্ন অনুশীলন</a></div>
+  <div class="grid">{% for r in results %}<div class="card guest-question"><h3>{{r.number}}. {{r.question.question_text}}</h3><p class="{{'success-text' if r.is_correct else 'muted'}}">{{'✅ সঠিক উত্তর দিয়েছ।' if r.is_correct else '❌ সঠিক হয়নি।'}}</p>{% for o in r.options %}<div class="quiz-review-option">{{'✅ ' if o.is_correct else ''}}{{o.option_text}}{% if r.selected==o.option_text %} <b>— তোমার উত্তর</b>{% endif %}</div>{% endfor %}{% if r.question.explanation %}<p class="muted">{{r.question.explanation}}</p>{% endif %}</div>{% endfor %}</div>
+  {% else %}
+  {% if questions %}<form method="post"><div class="grid">{% for q in questions %}<div class="card guest-question"><h3>{{loop.index}}. {{q.question_text}}</h3><div class="guest-options">{% for o in options[q.id] %}<label><input type="radio" name="q{{q.id}}" value="{{o.option_text}}" required> <span>{{o.option_text}}</span></label>{% endfor %}</div></div>{% endfor %}</div><div class="card section-card"><button class="btn primary" type="submit">✅ উত্তর জমা দিয়ে ফল দেখো</button></div></form>{% else %}<div class="card section-card"><h2>এই কুইজে এখনো প্রশ্ন নেই</h2><p>অন্য কুইজ বেছে নাও অথবা অ্যাডমিনকে প্রশ্ন যোগ করতে বলো।</p><a class="btn primary" href="{{url_for('guest_practice',class_no=class_no)}}">ফিরে যাও</a></div>{% endif %}
+  {% endif %}
+</div>
+{% endblock %}
