@@ -12,7 +12,7 @@
         <a class="btn primary lg" href="#classes">🚀 শ্রেণি বেছে শুরু করি</a>
         <a class="btn ghost lg" href="{{ url_for('explore') }}">🌍 পৃথিবী ঘুরে দেখি</a>
       </div>
-      <div class="h-trust"><span>✅ শ্রেণি ১–৪-এ নিবন্ধন ছাড়াই</span><span>⭐ XP ও ব্যাজ</span><span>📱 মোবাইল-বান্ধব</span></div>
+      <div class="h-trust"><span>{% if access.open_label %}✅ {{ access.open_label }}-এ নিবন্ধন ছাড়াই{% else %}✅ সহজ নিবন্ধন, দ্রুত অনুমোদন{% endif %}</span><span>⭐ XP ও ব্যাজ</span><span>📱 মোবাইল-বান্ধব</span></div>
     </div>
     <div class="h-visual">
       <div class="h-blob"></div>
@@ -41,12 +41,12 @@
 
 <!-- CLASSES -->
 <section id="classes" class="wrap h-sec">
-  <div class="h-head"><span class="tag">শ্রেণি</span><h2>তোমার শ্রেণি বেছে নাও</h2><p>শ্রেণি ১–৪ থেকে সরাসরি অনুশীলন শুরু করো। শ্রেণি ৫–১২-এর জন্য নিবন্ধন ও Admin অনুমোদন প্রয়োজন।</p></div>
+  <div class="h-head"><span class="tag">শ্রেণি</span><h2>তোমার শ্রেণি বেছে নাও</h2><p>{% if access.open_label %}{{ access.open_label }} থেকে সরাসরি অনুশীলন শুরু করো।{% endif %}{% if access.req_label %} {{ access.req_label }}-এর জন্য নিবন্ধন ও Admin অনুমোদন প্রয়োজন।{% endif %}</p></div>
   <div class="stage-row">
-    {% for c in classes %}
-    {% set n = loop.index %}
+    {% for c in class_cards %}
+    {% set n = c.no %}
     <a class="cls {% if n<=5 %}st-0{% elif n<=8 %}st-1{% elif n<=10 %}st-2{% else %}st-3{% endif %}" href="{{ url_for('class_entry', class_no=n) }}">
-      <span class="no">{{ n }}</span><b>{{ c.name }}</b><small>বিষয়ভিত্তিক প্রশ্ন ও কুইজ</small><span class="go">{{ 'সরাসরি প্র্যাকটিস →' if n<=4 else 'নিবন্ধন প্রয়োজন →' }}</span>
+      <span class="no">{{ n }}</span><b>{{ c.name }}</b><small>বিষয়ভিত্তিক প্রশ্ন ও কুইজ</small><span class="go">{{ 'নিবন্ধন প্রয়োজন →' if c.reg_required else 'সরাসরি প্র্যাকটিস →' }}</span>
     </a>
     {% endfor %}
   </div>
@@ -80,7 +80,7 @@
 <section class="wrap h-sec">
   <div class="h-head"><span class="tag">কীভাবে কাজ করে</span><h2>সহজেই শেখা শুরু</h2></div>
   <div class="steps">
-    <div class="step"><h3>শ্রেণি বেছে নাও</h3><p>শ্রেণি ১–৪ সরাসরি অনুশীলন; শ্রেণি ৫–১২-এর জন্য নিবন্ধন ও অনুমোদন।</p></div>
+    <div class="step"><h3>শ্রেণি বেছে নাও</h3><p>{% if access.open_label %}{{ access.open_label }} সরাসরি অনুশীলন{% endif %}{% if access.open_label and access.req_label %}; {% endif %}{% if access.req_label %}{{ access.req_label }}-এর জন্য নিবন্ধন ও অনুমোদন{% endif %}।</p></div>
     <div class="step"><h3>অনুশীলন করো</h3><p>বিষয় ও অধ্যায় বেছে প্রশ্ন সমাধান করো, কুইজে অংশ নাও।</p></div>
     <div class="step"><h3>পুরস্কার জিতো</h3><p>XP, Level ও Badge অর্জন করে নিজের অগ্রগতি দেখো।</p></div>
   </div>
@@ -120,6 +120,6 @@
 </section>
 
 <section class="wrap">
-  <div class="h-cta"><h2>আজই শেখার যাত্রা শুরু করো!</h2><p>শ্রেণি ১–৪-এ নিবন্ধন ছাড়াই শুরু করো; শ্রেণি ৫–১২-এর জন্য আবেদন করে Admin অনুমোদনের অপেক্ষা করো।</p><a class="btn lg" href="{{ url_for('register') }}">🌸 এখনই নিবন্ধন করো</a></div>
+  <div class="h-cta"><h2>আজই শেখার যাত্রা শুরু করো!</h2><p>{% if access.open_label %}{{ access.open_label }}-এ নিবন্ধন ছাড়াই শুরু করো{% endif %}{% if access.open_label and access.req_label %}; {% endif %}{% if access.req_label %}{{ access.req_label }}-এর জন্য আবেদন করে Admin অনুমোদনের অপেক্ষা করো{% endif %}।</p><a class="btn lg" href="{{ url_for('register') }}">🌸 এখনই নিবন্ধন করো</a></div>
 </section>
 {% endblock %}

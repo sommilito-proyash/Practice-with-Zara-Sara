@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<link rel="preconnect" href="https://flagcdn.com" crossorigin>
+<link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
 <title>Earth Explorer — পৃথিবী আবিষ্কার | প্র্যাকটিস উইথ জারা-সারা</title>
 <style>
 :root{--bg:#070b16;--panel:#0f1629;--panel2:#16203a;--line:#26345a;--txt:#e8eefc;--mute:#8fa0c8;--acc:#4fb3ff;--gold:#ffd54a;--ok:#3ddc84;--bad:#ff5d6c}
@@ -125,6 +129,22 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family
  #legend{max-width:62%}
  #tools{top:8px;right:8px}
 }
+/* v4 */
+.dif{display:flex;gap:8px;margin-top:10px}
+.dif button{flex:1;padding:8px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--mute);cursor:pointer;font:inherit;font-size:13px}
+.dif button.on{background:#12214a;border-color:var(--gold);color:var(--gold);font-weight:700}
+.dif small{opacity:.7}
+.qflag img{width:40px;vertical-align:middle;border-radius:3px;margin-right:8px}
+.bigflag{width:170px;border-radius:8px;margin:10px 0 4px;box-shadow:0 4px 16px #0008;display:block}
+svg.shape{width:100%;max-width:260px;height:auto;display:block;margin:8px 0;background:#0d1530;border-radius:12px;border:1px solid var(--line)}
+.rev{margin:8px 0 0;padding-left:18px;font-size:13px;line-height:1.6}
+.rev span{color:var(--ok)}
+#lv1.dim,#lv2.dim{opacity:.5}
+.adm{stroke:#fff;stroke-width:var(--sw,.7px);vector-effect:none;transition:none}
+.adm.sel{stroke:#ffd54a;stroke-width:calc(var(--sw,.7px)*4)}
+.lbl{stroke-width:3px}
+#map2d{will-change:transform;touch-action:none}
+.modes .btn small{margin-top:2px}
 </style>
 </head>
 <body>
@@ -142,7 +162,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family
   </aside>
   <main id="globeWrap">
     <div id="globe"></div>
-    <div id="hint">🖱 টেনে ঘোরাও · স্ক্রল করে জুম · দেশে ক্লিক করো</div>
+    <div id="hint">🖱 টেনে ঘোরাও · স্ক্রল করে জুম · দেশে ক্লিক করলে ৩D উঁচু হবে ও ঘূর্ণন থামবে</div>
     <div id="tools">
       <button id="bRot" class="on">🔄 ঘূর্ণন</button>
       <button id="bNight">🌙 রাত</button>
@@ -183,6 +203,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family
 
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-simplify@3/dist/topojson-simplify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/globe.gl@2/dist/globe.gl.min.js"></script>
 <script>
 (function(){
@@ -203,10 +224,10 @@ const popScale=d3.scaleSequentialLog(d3.interpolateYlOrRd).domain([2e5,1.5e9]).c
 const areaScale=d3.scaleSequentialLog(d3.interpolateYlGnBu).domain([1e3,1.7e7]).clamp(true);
 
 /* ---------- নাম ও তথ্য ---------- */
-const nameBn=f=>(f.d&&f.d.translations&&f.d.translations.ben&&f.d.translations.ben.common)||(f.d&&f.d.name&&f.d.name.common)||f.properties.name;
+const nameBn=f=>(f.d&&f.d.bn)||EXTRA_BN[f.properties.name]||(f.d&&f.d.name&&f.d.name.common)||f.properties.name;
 const nameEn=f=>(f.d&&f.d.name&&f.d.name.common)||f.properties.name;
-const flagOf=f=>f.d&&f.d.flags&&(f.d.flags.png||f.d.flags.svg)||'';
-const capOf=f=>f.d&&f.d.capital&&f.d.capital[0]||'';
+const flagOf=f=>f.d&&f.d.cca2?'https://flagcdn.com/w320/'+f.d.cca2.toLowerCase()+'.png':'';
+const capOf=f=>f.d&&(f.d.capBn||f.d.capEn)||'';
 
 function normalizeDataURL(url){
   // GitHub web/raw URLs redirect through github.com and commonly fail browser CORS.
@@ -230,7 +251,7 @@ function asJsDelivrURL(url){
     return url;
   }catch(e){return url;}
 }
-const BUILD='v3.13';
+const BUILD='v4.0';
 function describeFetchError(e,candidate){
   let host='?';try{host=new URL(candidate).hostname;}catch(_){}
   let why;
@@ -256,7 +277,7 @@ async function getJSON(url,opt){
     const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),tmo);
     let status=0;
     try{
-      const r=await fetch(candidate,{signal:ctl.signal,cache:'no-store'});
+      const r=await fetch(candidate,{signal:ctl.signal,cache:opt.cache||'no-store'});
       status=r.status;
       if(!r.ok)throw new Error('HTTP '+r.status+(r.status===404?' (ফাইল/পাথ নেই)':''));
       const body=await r.text();
@@ -281,65 +302,101 @@ async function getJSON(url,opt){
   throw err;
 }
 
-// Offline ISO-3166 index: country selection and map controls still work if REST Countries is blocked.
-const OFFLINE_COUNTRIES=[{"cca3":"ABW","ccn3":"533","name":{"common":"Aruba"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"AFG","ccn3":"004","name":{"common":"Afghanistan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"AGO","ccn3":"024","name":{"common":"Angola"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"AIA","ccn3":"660","name":{"common":"Anguilla"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ALA","ccn3":"248","name":{"common":"Åland Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ALB","ccn3":"008","name":{"common":"Albania"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"AND","ccn3":"020","name":{"common":"Andorra"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ARE","ccn3":"784","name":{"common":"United Arab Emirates"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ARG","ccn3":"032","name":{"common":"Argentina"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ARM","ccn3":"051","name":{"common":"Armenia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ASM","ccn3":"016","name":{"common":"American Samoa"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ATA","ccn3":"010","name":{"common":"Antarctica"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ATF","ccn3":"260","name":{"common":"French Southern Territories"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ATG","ccn3":"028","name":{"common":"Antigua and Barbuda"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"AUS","ccn3":"036","name":{"common":"Australia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"AUT","ccn3":"040","name":{"common":"Austria"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"AZE","ccn3":"031","name":{"common":"Azerbaijan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BDI","ccn3":"108","name":{"common":"Burundi"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BEL","ccn3":"056","name":{"common":"Belgium"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BEN","ccn3":"204","name":{"common":"Benin"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BES","ccn3":"535","name":{"common":"Bonaire, Sint Eustatius and Saba"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BFA","ccn3":"854","name":{"common":"Burkina Faso"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BGD","ccn3":"050","name":{"common":"Bangladesh"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BGR","ccn3":"100","name":{"common":"Bulgaria"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BHR","ccn3":"048","name":{"common":"Bahrain"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BHS","ccn3":"044","name":{"common":"Bahamas"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BIH","ccn3":"070","name":{"common":"Bosnia and Herzegovina"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BLM","ccn3":"652","name":{"common":"Saint Barthélemy"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BLR","ccn3":"112","name":{"common":"Belarus"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BLZ","ccn3":"084","name":{"common":"Belize"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BMU","ccn3":"060","name":{"common":"Bermuda"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BOL","ccn3":"068","name":{"common":"Bolivia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BRA","ccn3":"076","name":{"common":"Brazil"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BRB","ccn3":"052","name":{"common":"Barbados"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BRN","ccn3":"096","name":{"common":"Brunei Darussalam"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BTN","ccn3":"064","name":{"common":"Bhutan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BVT","ccn3":"074","name":{"common":"Bouvet Island"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"BWA","ccn3":"072","name":{"common":"Botswana"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CAF","ccn3":"140","name":{"common":"Central African Republic"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CAN","ccn3":"124","name":{"common":"Canada"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CCK","ccn3":"166","name":{"common":"Cocos (Keeling) Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CHE","ccn3":"756","name":{"common":"Switzerland"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CHL","ccn3":"152","name":{"common":"Chile"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CHN","ccn3":"156","name":{"common":"China"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CIV","ccn3":"384","name":{"common":"Côte d'Ivoire"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CMR","ccn3":"120","name":{"common":"Cameroon"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"COD","ccn3":"180","name":{"common":"Congo, The Democratic Republic of the"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"COG","ccn3":"178","name":{"common":"Congo"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"COK","ccn3":"184","name":{"common":"Cook Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"COL","ccn3":"170","name":{"common":"Colombia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"COM","ccn3":"174","name":{"common":"Comoros"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CPV","ccn3":"132","name":{"common":"Cabo Verde"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CRI","ccn3":"188","name":{"common":"Costa Rica"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CUB","ccn3":"192","name":{"common":"Cuba"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CUW","ccn3":"531","name":{"common":"Curaçao"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CXR","ccn3":"162","name":{"common":"Christmas Island"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CYM","ccn3":"136","name":{"common":"Cayman Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CYP","ccn3":"196","name":{"common":"Cyprus"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"CZE","ccn3":"203","name":{"common":"Czechia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"DEU","ccn3":"276","name":{"common":"Germany"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"DJI","ccn3":"262","name":{"common":"Djibouti"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"DMA","ccn3":"212","name":{"common":"Dominica"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"DNK","ccn3":"208","name":{"common":"Denmark"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"DOM","ccn3":"214","name":{"common":"Dominican Republic"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"DZA","ccn3":"012","name":{"common":"Algeria"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ECU","ccn3":"218","name":{"common":"Ecuador"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"EGY","ccn3":"818","name":{"common":"Egypt"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ERI","ccn3":"232","name":{"common":"Eritrea"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ESH","ccn3":"732","name":{"common":"Western Sahara"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ESP","ccn3":"724","name":{"common":"Spain"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"EST","ccn3":"233","name":{"common":"Estonia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ETH","ccn3":"231","name":{"common":"Ethiopia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"FIN","ccn3":"246","name":{"common":"Finland"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"FJI","ccn3":"242","name":{"common":"Fiji"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"FLK","ccn3":"238","name":{"common":"Falkland Islands (Malvinas)"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"FRA","ccn3":"250","name":{"common":"France"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"FRO","ccn3":"234","name":{"common":"Faroe Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"FSM","ccn3":"583","name":{"common":"Micronesia, Federated States of"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GAB","ccn3":"266","name":{"common":"Gabon"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GBR","ccn3":"826","name":{"common":"United Kingdom"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GEO","ccn3":"268","name":{"common":"Georgia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GGY","ccn3":"831","name":{"common":"Guernsey"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GHA","ccn3":"288","name":{"common":"Ghana"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GIB","ccn3":"292","name":{"common":"Gibraltar"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GIN","ccn3":"324","name":{"common":"Guinea"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GLP","ccn3":"312","name":{"common":"Guadeloupe"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GMB","ccn3":"270","name":{"common":"Gambia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GNB","ccn3":"624","name":{"common":"Guinea-Bissau"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GNQ","ccn3":"226","name":{"common":"Equatorial Guinea"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GRC","ccn3":"300","name":{"common":"Greece"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GRD","ccn3":"308","name":{"common":"Grenada"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GRL","ccn3":"304","name":{"common":"Greenland"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GTM","ccn3":"320","name":{"common":"Guatemala"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GUF","ccn3":"254","name":{"common":"French Guiana"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GUM","ccn3":"316","name":{"common":"Guam"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"GUY","ccn3":"328","name":{"common":"Guyana"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"HKG","ccn3":"344","name":{"common":"Hong Kong"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"HMD","ccn3":"334","name":{"common":"Heard Island and McDonald Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"HND","ccn3":"340","name":{"common":"Honduras"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"HRV","ccn3":"191","name":{"common":"Croatia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"HTI","ccn3":"332","name":{"common":"Haiti"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"HUN","ccn3":"348","name":{"common":"Hungary"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"IDN","ccn3":"360","name":{"common":"Indonesia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"IMN","ccn3":"833","name":{"common":"Isle of Man"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"IND","ccn3":"356","name":{"common":"India"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"IOT","ccn3":"086","name":{"common":"British Indian Ocean Territory"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"IRL","ccn3":"372","name":{"common":"Ireland"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"IRN","ccn3":"364","name":{"common":"Iran"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"IRQ","ccn3":"368","name":{"common":"Iraq"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ISL","ccn3":"352","name":{"common":"Iceland"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ISR","ccn3":"376","name":{"common":"Israel"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ITA","ccn3":"380","name":{"common":"Italy"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"JAM","ccn3":"388","name":{"common":"Jamaica"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"JEY","ccn3":"832","name":{"common":"Jersey"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"JOR","ccn3":"400","name":{"common":"Jordan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"JPN","ccn3":"392","name":{"common":"Japan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KAZ","ccn3":"398","name":{"common":"Kazakhstan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KEN","ccn3":"404","name":{"common":"Kenya"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KGZ","ccn3":"417","name":{"common":"Kyrgyzstan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KHM","ccn3":"116","name":{"common":"Cambodia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KIR","ccn3":"296","name":{"common":"Kiribati"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KNA","ccn3":"659","name":{"common":"Saint Kitts and Nevis"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KOR","ccn3":"410","name":{"common":"South Korea"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"KWT","ccn3":"414","name":{"common":"Kuwait"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LAO","ccn3":"418","name":{"common":"Laos"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LBN","ccn3":"422","name":{"common":"Lebanon"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LBR","ccn3":"430","name":{"common":"Liberia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LBY","ccn3":"434","name":{"common":"Libya"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LCA","ccn3":"662","name":{"common":"Saint Lucia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LIE","ccn3":"438","name":{"common":"Liechtenstein"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LKA","ccn3":"144","name":{"common":"Sri Lanka"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LSO","ccn3":"426","name":{"common":"Lesotho"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LTU","ccn3":"440","name":{"common":"Lithuania"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LUX","ccn3":"442","name":{"common":"Luxembourg"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"LVA","ccn3":"428","name":{"common":"Latvia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MAC","ccn3":"446","name":{"common":"Macao"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MAF","ccn3":"663","name":{"common":"Saint Martin (French part)"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MAR","ccn3":"504","name":{"common":"Morocco"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MCO","ccn3":"492","name":{"common":"Monaco"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MDA","ccn3":"498","name":{"common":"Moldova"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MDG","ccn3":"450","name":{"common":"Madagascar"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MDV","ccn3":"462","name":{"common":"Maldives"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MEX","ccn3":"484","name":{"common":"Mexico"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MHL","ccn3":"584","name":{"common":"Marshall Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MKD","ccn3":"807","name":{"common":"North Macedonia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MLI","ccn3":"466","name":{"common":"Mali"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MLT","ccn3":"470","name":{"common":"Malta"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MMR","ccn3":"104","name":{"common":"Myanmar"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MNE","ccn3":"499","name":{"common":"Montenegro"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MNG","ccn3":"496","name":{"common":"Mongolia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MNP","ccn3":"580","name":{"common":"Northern Mariana Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MOZ","ccn3":"508","name":{"common":"Mozambique"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MRT","ccn3":"478","name":{"common":"Mauritania"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MSR","ccn3":"500","name":{"common":"Montserrat"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MTQ","ccn3":"474","name":{"common":"Martinique"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MUS","ccn3":"480","name":{"common":"Mauritius"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MWI","ccn3":"454","name":{"common":"Malawi"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MYS","ccn3":"458","name":{"common":"Malaysia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"MYT","ccn3":"175","name":{"common":"Mayotte"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NAM","ccn3":"516","name":{"common":"Namibia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NCL","ccn3":"540","name":{"common":"New Caledonia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NER","ccn3":"562","name":{"common":"Niger"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NFK","ccn3":"574","name":{"common":"Norfolk Island"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NGA","ccn3":"566","name":{"common":"Nigeria"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NIC","ccn3":"558","name":{"common":"Nicaragua"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NIU","ccn3":"570","name":{"common":"Niue"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NLD","ccn3":"528","name":{"common":"Netherlands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NOR","ccn3":"578","name":{"common":"Norway"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NPL","ccn3":"524","name":{"common":"Nepal"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NRU","ccn3":"520","name":{"common":"Nauru"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"NZL","ccn3":"554","name":{"common":"New Zealand"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"OMN","ccn3":"512","name":{"common":"Oman"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PAK","ccn3":"586","name":{"common":"Pakistan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PAN","ccn3":"591","name":{"common":"Panama"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PCN","ccn3":"612","name":{"common":"Pitcairn"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PER","ccn3":"604","name":{"common":"Peru"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PHL","ccn3":"608","name":{"common":"Philippines"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PLW","ccn3":"585","name":{"common":"Palau"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PNG","ccn3":"598","name":{"common":"Papua New Guinea"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"POL","ccn3":"616","name":{"common":"Poland"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PRI","ccn3":"630","name":{"common":"Puerto Rico"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PRK","ccn3":"408","name":{"common":"North Korea"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PRT","ccn3":"620","name":{"common":"Portugal"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PRY","ccn3":"600","name":{"common":"Paraguay"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PSE","ccn3":"275","name":{"common":"Palestine, State of"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"PYF","ccn3":"258","name":{"common":"French Polynesia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"QAT","ccn3":"634","name":{"common":"Qatar"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"REU","ccn3":"638","name":{"common":"Réunion"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ROU","ccn3":"642","name":{"common":"Romania"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"RUS","ccn3":"643","name":{"common":"Russian Federation"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"RWA","ccn3":"646","name":{"common":"Rwanda"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SAU","ccn3":"682","name":{"common":"Saudi Arabia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SDN","ccn3":"729","name":{"common":"Sudan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SEN","ccn3":"686","name":{"common":"Senegal"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SGP","ccn3":"702","name":{"common":"Singapore"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SGS","ccn3":"239","name":{"common":"South Georgia and the South Sandwich Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SHN","ccn3":"654","name":{"common":"Saint Helena, Ascension and Tristan da Cunha"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SJM","ccn3":"744","name":{"common":"Svalbard and Jan Mayen"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SLB","ccn3":"090","name":{"common":"Solomon Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SLE","ccn3":"694","name":{"common":"Sierra Leone"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SLV","ccn3":"222","name":{"common":"El Salvador"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SMR","ccn3":"674","name":{"common":"San Marino"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SOM","ccn3":"706","name":{"common":"Somalia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SPM","ccn3":"666","name":{"common":"Saint Pierre and Miquelon"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SRB","ccn3":"688","name":{"common":"Serbia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SSD","ccn3":"728","name":{"common":"South Sudan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"STP","ccn3":"678","name":{"common":"Sao Tome and Principe"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SUR","ccn3":"740","name":{"common":"Suriname"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SVK","ccn3":"703","name":{"common":"Slovakia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SVN","ccn3":"705","name":{"common":"Slovenia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SWE","ccn3":"752","name":{"common":"Sweden"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SWZ","ccn3":"748","name":{"common":"Eswatini"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SXM","ccn3":"534","name":{"common":"Sint Maarten (Dutch part)"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SYC","ccn3":"690","name":{"common":"Seychelles"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"SYR","ccn3":"760","name":{"common":"Syria"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TCA","ccn3":"796","name":{"common":"Turks and Caicos Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TCD","ccn3":"148","name":{"common":"Chad"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TGO","ccn3":"768","name":{"common":"Togo"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"THA","ccn3":"764","name":{"common":"Thailand"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TJK","ccn3":"762","name":{"common":"Tajikistan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TKL","ccn3":"772","name":{"common":"Tokelau"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TKM","ccn3":"795","name":{"common":"Turkmenistan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TLS","ccn3":"626","name":{"common":"Timor-Leste"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TON","ccn3":"776","name":{"common":"Tonga"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TTO","ccn3":"780","name":{"common":"Trinidad and Tobago"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TUN","ccn3":"788","name":{"common":"Tunisia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TUR","ccn3":"792","name":{"common":"Türkiye"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TUV","ccn3":"798","name":{"common":"Tuvalu"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TWN","ccn3":"158","name":{"common":"Taiwan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"TZA","ccn3":"834","name":{"common":"Tanzania"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"UGA","ccn3":"800","name":{"common":"Uganda"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"UKR","ccn3":"804","name":{"common":"Ukraine"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"UMI","ccn3":"581","name":{"common":"United States Minor Outlying Islands"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"URY","ccn3":"858","name":{"common":"Uruguay"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"USA","ccn3":"840","name":{"common":"United States"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"UZB","ccn3":"860","name":{"common":"Uzbekistan"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"VAT","ccn3":"336","name":{"common":"Holy See (Vatican City State)"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"VCT","ccn3":"670","name":{"common":"Saint Vincent and the Grenadines"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"VEN","ccn3":"862","name":{"common":"Venezuela"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"VGB","ccn3":"092","name":{"common":"Virgin Islands, British"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"VIR","ccn3":"850","name":{"common":"Virgin Islands, U.S."},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"VNM","ccn3":"704","name":{"common":"Vietnam"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"VUT","ccn3":"548","name":{"common":"Vanuatu"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"WLF","ccn3":"876","name":{"common":"Wallis and Futuna"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"WSM","ccn3":"882","name":{"common":"Samoa"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"YEM","ccn3":"887","name":{"common":"Yemen"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ZAF","ccn3":"710","name":{"common":"South Africa"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ZMB","ccn3":"894","name":{"common":"Zambia"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]},{"cca3":"ZWE","ccn3":"716","name":{"common":"Zimbabwe"},"capital":[],"population":null,"area":null,"region":"Other","subregion":"","languages":{},"currencies":{},"flags":{},"borders":[],"timezones":[]}];
-
-// Small verified core fallback for common countries when every remote data source is unavailable.
-const CORE_COUNTRY_FALLBACK={
-  BGD:{capital:['Dhaka'],capitalInfo:{latlng:[23.8103,90.4125]},population:173562364,area:148460,region:'Asia',subregion:'Southern Asia',languages:{ben:'Bengali'},currencies:{BDT:{name:'Bangladeshi taka',symbol:'৳'}},borders:['IND','MMR'],timezones:['UTC+06:00'],flags:{png:'https://flagcdn.com/w320/bd.png',svg:'https://flagcdn.com/bd.svg'},translations:{ben:{common:'বাংলাদেশ'}}},
-  IND:{capital:['New Delhi'],capitalInfo:{latlng:[28.6139,77.209]},population:1428627663,area:3287590,region:'Asia',subregion:'Southern Asia',languages:{hin:'Hindi',eng:'English'},currencies:{INR:{name:'Indian rupee',symbol:'₹'}},borders:['BGD','BTN','MMR','CHN','NPL','PAK'],timezones:['UTC+05:30'],flags:{png:'https://flagcdn.com/w320/in.png',svg:'https://flagcdn.com/in.svg'}},
-  USA:{capital:['Washington, D.C.'],capitalInfo:{latlng:[38.8951,-77.0364]},population:340110988,area:9833517,region:'Americas',subregion:'North America',languages:{eng:'English'},currencies:{USD:{name:'United States dollar',symbol:'$'}},borders:['CAN','MEX'],timezones:['UTC-05:00'],flags:{png:'https://flagcdn.com/w320/us.png',svg:'https://flagcdn.com/us.svg'}},
-  GBR:{capital:['London'],capitalInfo:{latlng:[51.5072,-0.1276]},population:68350000,area:242495,region:'Europe',subregion:'Northern Europe',languages:{eng:'English'},currencies:{GBP:{name:'British pound',symbol:'£'}},borders:['IRL'],timezones:['UTC+00:00'],flags:{png:'https://flagcdn.com/w320/gb.png',svg:'https://flagcdn.com/gb.svg'}},
-  CHN:{capital:['Beijing'],capitalInfo:{latlng:[39.9042,116.4074]},population:1409670000,area:9706961,region:'Asia',subregion:'Eastern Asia',languages:{zho:'Chinese'},currencies:{CNY:{name:'Chinese yuan',symbol:'¥'}},borders:['AFG','BTN','MMR','IND','KAZ','NPL','PAK','RUS'],timezones:['UTC+08:00'],flags:{png:'https://flagcdn.com/w320/cn.png',svg:'https://flagcdn.com/cn.svg'}}
-};
-
-async function loadData(){
-  $('#loadmsg').textContent='মানচিত্রের সীমানা আনা হচ্ছে…';
-  const topo=await getJSON('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json');
-  features=topojson.feature(topo,topo.objects.countries).features.filter(f=>f.properties.name!=='Antarctica');
-  $('#loadmsg').textContent='দেশের তথ্য আনা হচ্ছে…';
-  let data=null;
-  const hasUsefulData=a=>Array.isArray(a)&&a.some(d=>d&&d.cca3&&(d.population||d.capital&&d.capital.length||d.languages&&Object.keys(d.languages).length));
-  try{const c=localStorage.getItem('ee_data_v2');if(c){const parsed=JSON.parse(c);if(hasUsefulData(parsed))data=parsed;}}catch(e){}
-  // Primary: one request, so a failure in one of two old split requests cannot erase all data.
-  if(!data){
-    try{
-      data=await getJSON('https://restcountries.com/v3.1/all?fields=cca3,ccn3,name,capital,capitalInfo,population,area,region,subregion,translations,languages,currencies,flags,latlng,timezones,borders');
-      if(!hasUsefulData(data))throw new Error('দেশের তথ্য অসম্পূর্ণ');
-      try{localStorage.setItem('ee_data_v2',JSON.stringify(data));}catch(e){}
-    }catch(e){
-      console.warn('প্রধান দেশ-তথ্য API ব্যর্থ; CDN বিকল্প চেষ্টা হচ্ছে',e);
-      try{
-        data=await getJSON('https://cdn.jsdelivr.net/npm/world-countries@5.0.0/countries.json');
-        if(!hasUsefulData(data))throw new Error('CDN দেশ-তথ্য অসম্পূর্ণ');
-        try{localStorage.setItem('ee_data_v2',JSON.stringify(data));}catch(e){}
-      }catch(e2){console.warn('CDN দেশ-তথ্যও পাওয়া যায়নি; অন্তর্নির্মিত তালিকা ব্যবহার হবে',e2);data=OFFLINE_COUNTRIES;}
-    }
-  }
-  if(!Array.isArray(data)||!data.length)data=OFFLINE_COUNTRIES;
-  // Preserve numeric country IDs and names from the built-in index while adding richer metadata.
-  const baseByCode={};OFFLINE_COUNTRIES.forEach(d=>baseByCode[d.cca3]=d);
-  data=data.map(d=>{
-    const b=baseByCode[d.cca3]||{}, core=CORE_COUNTRY_FALLBACK[d.cca3]||{};
-    const merged=Object.assign({},b,core,d,{name:Object.assign({},b.name||{},d.name||{}),translations:Object.assign({},core.translations||{},d.translations||{}),languages:Object.assign({},core.languages||{},d.languages||{}),currencies:Object.assign({},core.currencies||{},d.currencies||{}),flags:Object.assign({},core.flags||{},d.flags||{})});
-    for(const k of ['capital','capitalInfo','population','area','region','subregion','borders','timezones'])if((merged[k]==null||(Array.isArray(merged[k])&&!merged[k].length)||(k==='region'&&merged[k]==='Other'))&&core[k]!=null)merged[k]=core[k];
-    return merged;
+const TOPO_URL='https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json';
+const RCODE={A:'Asia',E:'Europe',F:'Africa',M:'Americas',O:'Oceania'};
+const EXTRA_BN={'N. Cyprus':'উত্তর সাইপ্রাস','Somaliland':'সোমালিল্যান্ড'};
+const NAME_ALIAS={'Kosovo':'XKX'};
+const KM2=6371*6371;
+/* অন্তর্নির্মিত ডেটা: [cca3, cca2, ccn3, বাংলা নাম, English নাম, রাজধানী (EN), রাজধানী (বাংলা), অঞ্চল-কোড]
+   — ইন্টারনেট/API ছাড়াই নাম, পতাকা-কোড, রাজধানী ও কুইজ চলে। */
+const DB=[["ABW","AW","533","আরুবা","Aruba","","",""],["AFG","AF","004","আফগানিস্তান","Afghanistan","Kabul","কাবুল","A"],["AGO","AO","024","অ্যাঙ্গোলা","Angola","Luanda","লুয়ান্ডা","F"],["AIA","AI","660","অ্যাঙ্গুইলা","Anguilla","","",""],["ALA","AX","248","অলান্ড দ্বীপপুঞ্জ","Åland Islands","","",""],["ALB","AL","008","আলবেনিয়া","Albania","Tirana","তিরানা","E"],["AND","AD","020","আন্ডোরা","Andorra","Andorra la Vella","আন্দোরা লা ভেলা","E"],["ARE","AE","784","সংযুক্ত আরব আমিরাত","United Arab Emirates","Abu Dhabi","আবু ধাবি","A"],["ARG","AR","032","আর্জেন্টিনা","Argentina","Buenos Aires","বুয়েনোস আইরেস","M"],["ARM","AM","051","আর্মেনিয়া","Armenia","Yerevan","ইয়েরেভান","A"],["ASM","AS","016","আমেরিকান সামোয়া","American Samoa","","",""],["ATA","AQ","010","অ্যান্টার্কটিকা","Antarctica","","",""],["ATF","TF","260","ফরাসী দক্ষিণাঞ্চল","French Southern Territories","","",""],["ATG","AG","028","অ্যান্টিগুয়া ও বারবুডা","Antigua & Barbuda","Saint John's","সেন্ট জন'স","M"],["AUS","AU","036","অস্ট্রেলিয়া","Australia","Canberra","ক্যানবেরা","O"],["AUT","AT","040","অস্ট্রিয়া","Austria","Vienna","ভিয়েনা","E"],["AZE","AZ","031","আজারবাইজান","Azerbaijan","Baku","বাকু","A"],["BDI","BI","108","বুরুন্ডি","Burundi","Gitega","গিতেগা","F"],["BEL","BE","056","বেলজিয়াম","Belgium","Brussels","ব্রাসেলস","E"],["BEN","BJ","204","বেনিন","Benin","Porto-Novo","পোর্তো-নোভো","F"],["BES","BQ","535","ক্যারিবিয়ান নেদারল্যান্ডস","Caribbean Netherlands","","",""],["BFA","BF","854","বুরকিনা ফাসো","Burkina Faso","Ouagadougou","ওয়াগাডুগু","F"],["BGD","BD","050","বাংলাদেশ","Bangladesh","Dhaka","ঢাকা","A"],["BGR","BG","100","বুলগেরিয়া","Bulgaria","Sofia","সোফিয়া","E"],["BHR","BH","048","বাহারিন","Bahrain","Manama","মানামা","A"],["BHS","BS","044","বাহামা দ্বীপপুঞ্জ","Bahamas","Nassau","নাসাউ","M"],["BIH","BA","070","বসনিয়া ও হার্জেগোভিনা","Bosnia & Herzegovina","Sarajevo","সারাজেভো","E"],["BLM","BL","652","সেন্ট বার্থেলেমি","St. Barthélemy","","",""],["BLR","BY","112","বেলারুশ","Belarus","Minsk","মিনস্ক","E"],["BLZ","BZ","084","বেলিজ","Belize","Belmopan","বেলমোপান","M"],["BMU","BM","060","বারমুডা","Bermuda","","",""],["BOL","BO","068","বলিভিয়া","Bolivia","Sucre","সুক্রে","M"],["BRA","BR","076","ব্রাজিল","Brazil","Brasília","ব্রাসিলিয়া","M"],["BRB","BB","052","বার্বাডোজ","Barbados","Bridgetown","ব্রিজটাউন","M"],["BRN","BN","096","ব্রুনেই","Brunei","Bandar Seri Begawan","বন্দর সেরি বেগাওয়ান","A"],["BTN","BT","064","ভুটান","Bhutan","Thimphu","থিম্পু","A"],["BVT","BV","074","বোভেট দ্বীপ","Bouvet Island","","",""],["BWA","BW","072","বতসোয়ানা","Botswana","Gaborone","গ্যাবোরোন","F"],["CAF","CF","140","মধ্য আফ্রিকার প্রজাতন্ত্র","Central African Republic","Bangui","বাঙ্গি","F"],["CAN","CA","124","কানাডা","Canada","Ottawa","অটোয়া","M"],["CCK","CC","166","কোকোস (কিলিং) দ্বীপপুঞ্জ","Cocos (Keeling) Islands","","",""],["CHE","CH","756","সুইজারল্যান্ড","Switzerland","Bern","বার্ন","E"],["CHL","CL","152","চিলি","Chile","Santiago","সান্তিয়াগো","M"],["CHN","CN","156","চীন","China","Beijing","বেইজিং","A"],["CIV","CI","384","আইভরি কোস্ট","Côte d'Ivoire","Yamoussoukro","ইয়ামুসুক্রো","F"],["CMR","CM","120","ক্যামেরুন","Cameroon","Yaoundé","ইয়াউন্ডে","F"],["COD","CD","180","কঙ্গো (কিনশাসা)","DR Congo","Kinshasa","কিনশাসা","F"],["COG","CG","178","কঙ্গো (ব্রাজাভিল)","Republic of the Congo","Brazzaville","ব্রাজাভিল","F"],["COK","CK","184","কুক দ্বীপপুঞ্জ","Cook Islands","","",""],["COL","CO","170","কলম্বিয়া","Colombia","Bogotá","বোগোতা","M"],["COM","KM","174","কমোরোস","Comoros","Moroni","মোরোনি","F"],["CPV","CV","132","কেপ ভার্দে","Cape Verde","Praia","প্রাইয়া","F"],["CRI","CR","188","কোস্টারিকা","Costa Rica","San José","সান হোসে","M"],["CUB","CU","192","কিউবা","Cuba","Havana","হাভানা","M"],["CUW","CW","531","কুরাসাও","Curaçao","","",""],["CXR","CX","162","ক্রিসমাস দ্বীপ","Christmas Island","","",""],["CYM","KY","136","কেম্যান দ্বীপপুঞ্জ","Cayman Islands","","",""],["CYP","CY","196","সাইপ্রাস","Cyprus","Nicosia","নিকোসিয়া","E"],["CZE","CZ","203","চেক প্রজাতন্ত্র","Czechia","Prague","প্রাগ","E"],["DEU","DE","276","জার্মানি","Germany","Berlin","বার্লিন","E"],["DJI","DJ","262","জিবুতি","Djibouti","Djibouti","জিবুতি","F"],["DMA","DM","212","ডোমিনিকা","Dominica","Roseau","রোসো","M"],["DNK","DK","208","ডেনমার্ক","Denmark","Copenhagen","কোপেনহেগেন","E"],["DOM","DO","214","ডোমেনিকান প্রজাতন্ত্র","Dominican Republic","Santo Domingo","সান্তো দোমিঙ্গো","M"],["DZA","DZ","012","আলজেরিয়া","Algeria","Algiers","আলজিয়ার্স","F"],["ECU","EC","218","ইকুয়েডর","Ecuador","Quito","কিতো","M"],["EGY","EG","818","মিশর","Egypt","Cairo","কায়রো","F"],["ERI","ER","232","ইরিত্রিয়া","Eritrea","Asmara","আসমারা","F"],["ESH","EH","732","পশ্চিম সাহারা","Western Sahara","","",""],["ESP","ES","724","স্পেন","Spain","Madrid","মাদ্রিদ","E"],["EST","EE","233","এস্তোনিয়া","Estonia","Tallinn","তালিন","E"],["ETH","ET","231","ইথিওপিয়া","Ethiopia","Addis Ababa","আদ্দিস আবাবা","F"],["FIN","FI","246","ফিনল্যান্ড","Finland","Helsinki","হেলসিঙ্কি","E"],["FJI","FJ","242","ফিজি","Fiji","Suva","সুভা","O"],["FLK","FK","238","ফকল্যান্ড দ্বীপপুঞ্জ","Falkland Islands","","",""],["FRA","FR","250","ফ্রান্স","France","Paris","প্যারিস","E"],["FRO","FO","234","ফ্যারো দ্বীপপুঞ্জ","Faroe Islands","","",""],["FSM","FM","583","মাইক্রোনেশিয়া","Micronesia","Palikir","পালিকির","O"],["GAB","GA","266","গ্যাবন","Gabon","Libreville","লিব্রেভিল","F"],["GBR","GB","826","যুক্তরাজ্য","United Kingdom","London","লন্ডন","E"],["GEO","GE","268","জর্জিয়া","Georgia","Tbilisi","তিবিলিসি","A"],["GGY","GG","831","গার্নসি","Guernsey","","",""],["GHA","GH","288","ঘানা","Ghana","Accra","আক্রা","F"],["GIB","GI","292","জিব্রাল্টার","Gibraltar","","",""],["GIN","GN","324","গিনি","Guinea","Conakry","কোনাক্রি","F"],["GLP","GP","312","গুয়াদেলৌপ","Guadeloupe","","",""],["GMB","GM","270","গাম্বিয়া","Gambia","Banjul","বানজুল","F"],["GNB","GW","624","গিনি-বিসাউ","Guinea-Bissau","Bissau","বিসাউ","F"],["GNQ","GQ","226","নিরক্ষীয় গিনি","Equatorial Guinea","Malabo","মালাবো","F"],["GRC","GR","300","গ্রীস","Greece","Athens","এথেন্স","E"],["GRD","GD","308","গ্রেনাডা","Grenada","Saint George's","সেন্ট জর্জেস","M"],["GRL","GL","304","গ্রীনল্যান্ড","Greenland","","",""],["GTM","GT","320","গুয়াতেমালা","Guatemala","Guatemala City","গুয়াতেমালা সিটি","M"],["GUF","GF","254","ফরাসী গায়ানা","French Guiana","","",""],["GUM","GU","316","গুয়াম","Guam","","",""],["GUY","GY","328","গিয়ানা","Guyana","Georgetown","জর্জটাউন","M"],["HKG","HK","344","হংকং এসএআর চীনা","Hong Kong","","",""],["HMD","HM","334","হার্ড এবং ম্যাকডোনাল্ড দ্বীপপুঞ্জ","Heard & McDonald Islands","","",""],["HND","HN","340","হন্ডুরাস","Honduras","Tegucigalpa","তেগুসিগালপা","M"],["HRV","HR","191","ক্রোয়েশিয়া","Croatia","Zagreb","জাগরেব","E"],["HTI","HT","332","হাইতি","Haiti","Port-au-Prince","পোর্ট-অব-প্রিন্স","M"],["HUN","HU","348","হাঙ্গেরি","Hungary","Budapest","বুদাপেস্ট","E"],["IDN","ID","360","ইন্দোনেশিয়া","Indonesia","Jakarta","জাকার্তা","A"],["IMN","IM","833","আইল অফ ম্যান","Isle of Man","","",""],["IND","IN","356","ভারত","India","New Delhi","নয়াদিল্লি","A"],["IOT","IO","086","ব্রিটিশ ভারত মহাসাগরীয় অঞ্চল","British Indian Ocean Territory","","",""],["IRL","IE","372","আয়ারল্যান্ড","Ireland","Dublin","ডাবলিন","E"],["IRN","IR","364","ইরান","Iran","Tehran","তেহরান","A"],["IRQ","IQ","368","ইরাক","Iraq","Baghdad","বাগদাদ","A"],["ISL","IS","352","আইসল্যান্ড","Iceland","Reykjavik","রেইকিয়াভিক","E"],["ISR","IL","376","ইজরায়েল","Israel","Jerusalem","জেরুজালেম","A"],["ITA","IT","380","ইতালি","Italy","Rome","রোম","E"],["JAM","JM","388","জামাইকা","Jamaica","Kingston","কিংস্টন","M"],["JEY","JE","832","জার্সি","Jersey","","",""],["JOR","JO","400","জর্ডন","Jordan","Amman","আম্মান","A"],["JPN","JP","392","জাপান","Japan","Tokyo","টোকিও","A"],["KAZ","KZ","398","কাজাখস্তান","Kazakhstan","Astana","আস্তানা","A"],["KEN","KE","404","কেনিয়া","Kenya","Nairobi","নাইরোবি","F"],["KGZ","KG","417","কিরগিজিস্তান","Kyrgyzstan","Bishkek","বিশকেক","A"],["KHM","KH","116","কম্বোডিয়া","Cambodia","Phnom Penh","নমপেন","A"],["KIR","KI","296","কিরিবাতি","Kiribati","South Tarawa","দক্ষিণ তারাওয়া","O"],["KNA","KN","659","সেন্ট কিটস ও নেভিস","St. Kitts & Nevis","Basseterre","বাসেতের","M"],["KOR","KR","410","দক্ষিণ কোরিয়া","South Korea","Seoul","সিউল","A"],["KWT","KW","414","কুয়েত","Kuwait","Kuwait City","কুয়েত সিটি","A"],["LAO","LA","418","লাওস","Laos","Vientiane","ভিয়েনতিয়েন","A"],["LBN","LB","422","লেবানন","Lebanon","Beirut","বৈরুত","A"],["LBR","LR","430","লাইবেরিয়া","Liberia","Monrovia","মনরোভিয়া","F"],["LBY","LY","434","লিবিয়া","Libya","Tripoli","ত্রিপোলি","F"],["LCA","LC","662","সেন্ট লুসিয়া","St. Lucia","Castries","কাস্ট্রিস","M"],["LIE","LI","438","লিচেনস্টেইন","Liechtenstein","Vaduz","ফাদুৎস","E"],["LKA","LK","144","শ্রীলঙ্কা","Sri Lanka","Sri Jayawardenepura Kotte","শ্রী জয়বর্ধনেপুরা কোট্টে","A"],["LSO","LS","426","লেসোথো","Lesotho","Maseru","মাসেরু","F"],["LTU","LT","440","লিথুয়ানিয়া","Lithuania","Vilnius","ভিলনিয়াস","E"],["LUX","LU","442","লাক্সেমবার্গ","Luxembourg","Luxembourg","লুক্সেমবার্গ","E"],["LVA","LV","428","লাটভিয়া","Latvia","Riga","রিগা","E"],["MAC","MO","446","ম্যাকাও এসএআর চীন","Macao","","",""],["MAF","MF","663","সেন্ট মার্টিন","St. Martin","","",""],["MAR","MA","504","মোরক্কো","Morocco","Rabat","রাবাত","F"],["MCO","MC","492","মোনাকো","Monaco","Monaco","মোনাকো","E"],["MDA","MD","498","মলদোভা","Moldova","Chișinău","কিশিনেভ","E"],["MDG","MG","450","মাদাগাস্কার","Madagascar","Antananarivo","আন্তানানারিভো","F"],["MDV","MV","462","মালদ্বীপ","Maldives","Malé","মালে","A"],["MEX","MX","484","মেক্সিকো","Mexico","Mexico City","মেক্সিকো সিটি","M"],["MHL","MH","584","মার্শাল দ্বীপপুঞ্জ","Marshall Islands","Majuro","মাজুরো","O"],["MKD","MK","807","উত্তর মেসিডোনিয়া","North Macedonia","Skopje","স্কোপিয়ে","E"],["MLI","ML","466","মালি","Mali","Bamako","বামাকো","F"],["MLT","MT","470","মাল্টা","Malta","Valletta","ভ্যালেটা","E"],["MMR","MM","104","মিয়ানমার","Myanmar","Naypyidaw","নেপিদো","A"],["MNE","ME","499","মন্টিনিগ্রো","Montenegro","Podgorica","পদগোরিৎসা","E"],["MNG","MN","496","মঙ্গোলিয়া","Mongolia","Ulaanbaatar","উলানবাটার","A"],["MNP","MP","580","উত্তরাঞ্চলীয় মারিয়ানা দ্বীপপুঞ্জ","Northern Mariana Islands","","",""],["MOZ","MZ","508","মোজাম্বিক","Mozambique","Maputo","মাপুতো","F"],["MRT","MR","478","মরিতানিয়া","Mauritania","Nouakchott","নুয়াকশট","F"],["MSR","MS","500","মন্টসেরাট","Montserrat","","",""],["MTQ","MQ","474","মার্টিনিক","Martinique","","",""],["MUS","MU","480","মরিশাস","Mauritius","Port Louis","পোর্ট লুই","F"],["MWI","MW","454","মালাউই","Malawi","Lilongwe","লিলংউই","F"],["MYS","MY","458","মালয়েশিয়া","Malaysia","Kuala Lumpur","কুয়ালালামপুর","A"],["MYT","YT","175","মায়োত্তে","Mayotte","","",""],["NAM","NA","516","নামিবিয়া","Namibia","Windhoek","উইন্ডহুক","F"],["NCL","NC","540","নিউ ক্যালেডোনিয়া","New Caledonia","","",""],["NER","NE","562","নাইজার","Niger","Niamey","নিয়ামে","F"],["NFK","NF","574","নরফোক দ্বীপ","Norfolk Island","","",""],["NGA","NG","566","নাইজেরিয়া","Nigeria","Abuja","আবুজা","F"],["NIC","NI","558","নিকারাগুয়া","Nicaragua","Managua","মানাগুয়া","M"],["NIU","NU","570","নিউয়ে","Niue","","",""],["NLD","NL","528","নেদারল্যান্ডস","Netherlands","Amsterdam","আমস্টারডাম","E"],["NOR","NO","578","নরওয়ে","Norway","Oslo","অসলো","E"],["NPL","NP","524","নেপাল","Nepal","Kathmandu","কাঠমান্ডু","A"],["NRU","NR","520","নাউরু","Nauru","Yaren","ইয়ারেন","O"],["NZL","NZ","554","নিউজিল্যান্ড","New Zealand","Wellington","ওয়েলিংটন","O"],["OMN","OM","512","ওমান","Oman","Muscat","মাস্কাট","A"],["PAK","PK","586","পাকিস্তান","Pakistan","Islamabad","ইসলামাবাদ","A"],["PAN","PA","591","পানামা","Panama","Panama City","পানামা সিটি","M"],["PCN","PN","612","পিটকেয়ার্ন দ্বীপপুঞ্জ","Pitcairn Islands","","",""],["PER","PE","604","পেরু","Peru","Lima","লিমা","M"],["PHL","PH","608","ফিলিপাইন","Philippines","Manila","ম্যানিলা","A"],["PLW","PW","585","পালাউ","Palau","Ngerulmud","এনগেরুলমুদ","O"],["PNG","PG","598","পাপুয়া নিউ গিনি","Papua New Guinea","Port Moresby","পোর্ট মোরসবি","O"],["POL","PL","616","পোল্যান্ড","Poland","Warsaw","ওয়ারশ","E"],["PRI","PR","630","পুয়ের্তো রিকো","Puerto Rico","","",""],["PRK","KP","408","উত্তর কোরিয়া","North Korea","Pyongyang","পিয়ংইয়ং","A"],["PRT","PT","620","পর্তুগাল","Portugal","Lisbon","লিসবন","E"],["PRY","PY","600","প্যারাগুয়ে","Paraguay","Asunción","আসুনসিয়ন","M"],["PSE","PS","275","ফিলিস্তিন","Palestine","","","A"],["PYF","PF","258","ফরাসী পলিনেশিয়া","French Polynesia","","",""],["QAT","QA","634","কাতার","Qatar","Doha","দোহা","A"],["REU","RE","638","রিইউনিয়ন","Réunion","","",""],["ROU","RO","642","রোমানিয়া","Romania","Bucharest","বুখারেস্ট","E"],["RUS","RU","643","রাশিয়া","Russia","Moscow","মস্কো","E"],["RWA","RW","646","রুয়ান্ডা","Rwanda","Kigali","কিগালি","F"],["SAU","SA","682","সৌদি আরব","Saudi Arabia","Riyadh","রিয়াদ","A"],["SDN","SD","729","সুদান","Sudan","Khartoum","খার্তুম","F"],["SEN","SN","686","সেনেগাল","Senegal","Dakar","ডাকার","F"],["SGP","SG","702","সিঙ্গাপুর","Singapore","Singapore","সিঙ্গাপুর","A"],["SGS","GS","239","দক্ষিণ জর্জিয়া ও দক্ষিণ স্যান্ডউইচ দ্বীপপুঞ্জ","South Georgia & South Sandwich Islands","","",""],["SHN","SH","654","সেন্ট হেলেনা","St. Helena","","",""],["SJM","SJ","744","স্বালবার্ড ও জান মেয়েন","Svalbard & Jan Mayen","","",""],["SLB","SB","090","সলোমন দ্বীপপুঞ্জ","Solomon Islands","Honiara","হনিয়ারা","O"],["SLE","SL","694","সিয়েরা লিওন","Sierra Leone","Freetown","ফ্রিটাউন","F"],["SLV","SV","222","এল সালভেদর","El Salvador","San Salvador","সান সালভাদর","M"],["SMR","SM","674","সান মারিনো","San Marino","San Marino","সান মারিনো","E"],["SOM","SO","706","সোমালিয়া","Somalia","Mogadishu","মোগাদিশু","F"],["SPM","PM","666","সেন্ট পিয়ের ও মিকুয়েলন","St. Pierre & Miquelon","","",""],["SRB","RS","688","সার্বিয়া","Serbia","Belgrade","বেলগ্রেড","E"],["SSD","SS","728","দক্ষিণ সুদান","South Sudan","Juba","জুবা","F"],["STP","ST","678","সাওটোমা ও প্রিন্সিপি","São Tomé and Príncipe","São Tomé","সাঁউ তুমে","F"],["SUR","SR","740","সুরিনাম","Suriname","Paramaribo","পারামারিবো","M"],["SVK","SK","703","স্লোভাকিয়া","Slovakia","Bratislava","ব্রাতিস্লাভা","E"],["SVN","SI","705","স্লোভানিয়া","Slovenia","Ljubljana","লুবিয়ানা","E"],["SWE","SE","752","সুইডেন","Sweden","Stockholm","স্টকহোম","E"],["SWZ","SZ","748","ইসোয়াতিনি","Eswatini","Mbabane","এমবাবানে","F"],["SXM","SX","534","সিন্ট মার্টেন","Sint Maarten","","",""],["SYC","SC","690","সিসিলি","Seychelles","Victoria","ভিক্টোরিয়া","F"],["SYR","SY","760","সিরিয়া","Syria","Damascus","দামেস্ক","A"],["TCA","TC","796","তুর্কস ও কাইকোস দ্বীপপুঞ্জ","Turks & Caicos Islands","","",""],["TCD","TD","148","চাদ","Chad","N'Djamena","এনজামেনা","F"],["TGO","TG","768","টোগো","Togo","Lomé","লোমে","F"],["THA","TH","764","থাইল্যান্ড","Thailand","Bangkok","ব্যাংকক","A"],["TJK","TJ","762","তাজিকিস্তান","Tajikistan","Dushanbe","দুশানবে","A"],["TKL","TK","772","টোকেলাউ","Tokelau","","",""],["TKM","TM","795","তুর্কমেনিস্তান","Turkmenistan","Ashgabat","আশগাবাত","A"],["TLS","TL","626","পূর্ব তিমুর","Timor-Leste","Dili","দিলি","A"],["TON","TO","776","টোঙ্গা","Tonga","Nuku'alofa","নুকুআলোফা","O"],["TTO","TT","780","ত্রিনিনাদ ও টোব্যাগো","Trinidad & Tobago","Port of Spain","পোর্ট অব স্পেন","M"],["TUN","TN","788","তিউনিসিয়া","Tunisia","Tunis","তিউনিস","F"],["TUR","TR","792","তুরস্ক","Turkey","Ankara","আঙ্কারা","A"],["TUV","TV","798","টুভালু","Tuvalu","Funafuti","ফুনাফুতি","O"],["TWN","TW","158","তাইওয়ান","Taiwan","Taipei","তাইপেই","A"],["TZA","TZ","834","তাঞ্জানিয়া","Tanzania","Dodoma","ডোডোমা","F"],["UGA","UG","800","উগান্ডা","Uganda","Kampala","কাম্পালা","F"],["UKR","UA","804","ইউক্রেন","Ukraine","Kyiv","কিয়েভ","E"],["UMI","UM","581","যুক্তরাষ্ট্রের পার্শ্ববর্তী দ্বীপপুঞ্জ","U.S. Outlying Islands","","",""],["URY","UY","858","উরুগুয়ে","Uruguay","Montevideo","মন্টেভিডিও","M"],["USA","US","840","যুক্তরাষ্ট্র","United States","Washington, D.C.","ওয়াশিংটন, ডি.সি.","M"],["UZB","UZ","860","উজবেকিস্তান","Uzbekistan","Tashkent","তাশখন্দ","A"],["VAT","VA","336","ভ্যাটিকান সিটি","Vatican City","Vatican City","ভ্যাটিকান সিটি","E"],["VCT","VC","670","সেন্ট ভিনসেন্ট ও গ্রেনাডিনস","St. Vincent & Grenadines","Kingstown","কিংস্টাউন","M"],["VEN","VE","862","ভেনেজুয়েলা","Venezuela","Caracas","কারাকাস","M"],["VGB","VG","092","ব্রিটিশ ভার্জিন দ্বীপপুঞ্জ","British Virgin Islands","","",""],["VIR","VI","850","মার্কিন যুক্তরাষ্ট্রীয় ভার্জিন দ্বীপপুঞ্জ","U.S. Virgin Islands","","",""],["VNM","VN","704","ভিয়েতনাম","Vietnam","Hanoi","হ্যানয়","A"],["VUT","VU","548","ভানুয়াটু","Vanuatu","Port Vila","পোর্ট ভিলা","O"],["WLF","WF","876","ওয়ালিস ও ফুটুনা","Wallis & Futuna","","",""],["WSM","WS","882","সামোয়া","Samoa","Apia","আপিয়া","O"],["YEM","YE","887","ইয়েমেন","Yemen","Sana'a","সানা","A"],["ZAF","ZA","710","দক্ষিণ আফ্রিকা","South Africa","Pretoria","প্রিটোরিয়া","F"],["ZMB","ZM","894","জাম্বিয়া","Zambia","Lusaka","লুসাকা","F"],["ZWE","ZW","716","জিম্বাবোয়ে","Zimbabwe","Harare","হারারে","F"],["XKX","XK","","কসোভো","Kosovo","Pristina","প্রিস্তিনা","E"]];
+function buildBase(){
+  const byCca3={},byNum={};
+  DB.forEach(r=>{
+    const d={cca3:r[0],cca2:r[1],ccn3:r[2],bn:r[3],name:{common:r[4]},capEn:r[5],capBn:r[6],region:RCODE[r[7]]||'',subregion:'',
+      capital:r[5]?[r[5]]:[],sov:!!r[5],population:null,area:null,languages:{},currencies:{},borders:[],timezones:[]};
+    byCca3[d.cca3]=d;if(d.ccn3)byNum[d.ccn3]=d;
   });
-  // Add core entries even if a fallback dataset omitted them.
-  for(const [code,extra] of Object.entries(CORE_COUNTRY_FALLBACK)){
-    if(!data.some(d=>d.cca3===code)){const base=baseByCode[code]||{};data.push(Object.assign({},base,extra,{cca3:code,name:base.name||{common:code}}));}
+  return {byCca3,byNum};
+}
+function applyRC(arr){
+  if(!Array.isArray(arr))return 0;let n=0;
+  arr.forEach(r=>{
+    const d=r&&byCca3[r.cca3];if(!d)return;n++;
+    if(r.population)d.population=r.population;
+    if(r.area)d.area=r.area;
+    if(r.region&&r.region!=='Other')d.region=r.region;
+    if(r.subregion)d.subregion=r.subregion;
+    if(r.languages&&Object.keys(r.languages).length)d.languages=r.languages;
+    if(r.currencies&&Object.keys(r.currencies).length)d.currencies=r.currencies;
+    if(r.capitalInfo)d.capitalInfo=r.capitalInfo;
+    if(Array.isArray(r.timezones)&&r.timezones.length)d.timezones=r.timezones;
+    if(Array.isArray(r.borders))d.borders=r.borders;
+    if(r.name&&r.name.official)d.name.official=r.name.official;
+    if(!d.capital.length&&Array.isArray(r.capital)&&r.capital.length){d.capital=r.capital;d.capEn=r.capital[0];}
+  });
+  return n;
+}
+const hasUseful=a=>Array.isArray(a)&&a.some(d=>d&&d.cca3&&(d.population||d.area));
+// REST Countries v3.1 একবারে ১০টির বেশি field দিলে 400 ফেরত দেয় — তাই দুই ভাগে, সমান্তরালে।
+async function enrichData(){
+  let merged=null;
+  try{const c=localStorage.getItem('ee_rc_v4');if(c){const p=JSON.parse(c);if(hasUseful(p))merged=p;}}catch(e){}
+  if(merged){applyRC(merged);afterEnrich();}
+  const RC='https://restcountries.com/v3.1/all?fields=';
+  const [a,b]=await Promise.allSettled([
+    getJSON(RC+'cca3,capital,capitalInfo,population,area,region,subregion,languages,currencies,name',{timeout:20000}),
+    getJSON(RC+'cca3,timezones,borders',{timeout:20000})
+  ]);
+  const map={};
+  [a,b].forEach(x=>{if(x.status==='fulfilled'&&Array.isArray(x.value))x.value.forEach(r=>{if(r&&r.cca3)map[r.cca3]=Object.assign(map[r.cca3]||{},r);});});
+  let arr=Object.values(map);
+  if(!hasUseful(arr)){
+    try{const w=await getJSON('https://cdn.jsdelivr.net/npm/world-countries@5.0.0/countries.json',{timeout:20000,cache:'default'});if(Array.isArray(w))arr=w;}catch(e){console.warn('বিকল্প দেশ-তথ্যও আসেনি',e);}
   }
-  const byNum={},byName={};
-  data.forEach(d=>{if(d.cca3)byCca3[d.cca3]=d;if(d.ccn3)byNum[String(d.ccn3).padStart(3,'0')]=d;if(d.name&&d.name.common)byName[d.name.common.toLowerCase()]=d;});
+  if(!arr.length)return;
+  applyRC(arr);
+  if(hasUseful(arr)){try{localStorage.setItem('ee_rc_v4',JSON.stringify(arr));}catch(e){}}
+  afterEnrich();
+}
+let enrichedOnce=false;
+function afterEnrich(){
+  if(!world)return;
+  refresh();legend();
+  if(!enrichedOnce){enrichedOnce=true;if(selected&&tab==='info')renderInfo();}
+}
+async function loadData(){
+  $('#loadmsg').textContent='মানচিত্র আনা হচ্ছে…';
+  const topo=await getJSON(TOPO_URL,{cache:'default',timeout:30000});
+  const geoms=topo.objects.countries.geometries;
+  let nbIdx=[];try{nbIdx=topojson.neighbors(geoms);}catch(e){console.warn('neighbors',e);}
+  const full=topojson.feature(topo,topo.objects.countries).features;
+  // গ্লোবের জন্য হালকা (সরলীকৃত) জিওমেট্রি: ত্রিভুজ কম → ঘূর্ণন/হোভার মসৃণ। নির্ভুল সংস্করণ f.full-এ থাকে।
+  let light=full;
+  try{
+    if(topojson.presimplify&&topojson.simplify&&topojson.quantile){
+      const p=topojson.presimplify(topo);
+      const s=topojson.simplify(p,topojson.quantile(p,0.7));
+      const l=topojson.feature(s,s.objects.countries).features;
+      if(l.length===full.length)light=l;
+    }
+  }catch(e){console.warn('simplify',e);}
+  light.forEach((f,i)=>{f._i=i;f.full=full[i];});
+  features=light.filter(f=>f.properties.name!=='Antarctica');
+  const base=buildBase();
+  byCca3=base.byCca3;
   features.forEach(f=>{
     const id=f.id!=null?String(f.id).padStart(3,'0'):null;
-    f.d=(id&&byNum[id])||byName[(f.properties.name||'').toLowerCase()]||null;
-    f.cen=d3.geoCentroid(f);
-    f.garea=d3.geoArea(f);
+    f.d=(id&&base.byNum[id])||base.byCca3[NAME_ALIAS[f.properties.name]]||null;
+    if(f.d)f.d.f=f;
+    f.nb=(nbIdx[f._i]||[]).map(j=>light[j]).filter(g=>g&&g.properties.name!=='Antarctica');
+    f.cen=d3.geoCentroid(f.full);
+    f.garea=d3.geoArea(f.full);
   });
-  features.forEach(f=>{if(f.d)f.d.f=f;});
 }
+
 /* ---------- রং ---------- */
+/* ---------- রং ও ৩D হাইলাইট ---------- */
 function baseColor(f){
   if(colorMode==='country')return countryColor(f);
   if(!f.d)return NODATA;
@@ -347,13 +404,28 @@ function baseColor(f){
   if(colorMode==='area')return f.d.area?areaScale(Math.max(f.d.area,1e3)):NODATA;
   return REGCOL[f.d.region]||NODATA;
 }
+const colCache=new Map();
 function colorOf(f){
-  if(quizHL&&quizHL.f===f)return quizHL.ok?'rgba(61,220,132,.95)':'rgba(255,93,108,.95)';
-  if(f===selected)return 'rgba(255,213,74,.95)';
-  const c=d3.color(baseColor(f));c.opacity=f===hovered?.92:.62;return c.formatRgb();
+  if(quizHL&&quizHL.f===f)return quizHL.ok?'rgba(61,220,132,.98)':'rgba(255,93,108,.98)';
+  if(f===selected)return 'rgba(255,208,64,.98)';
+  const key=colorMode+'|'+(f.id||f.properties.name)+'|'+(f===hovered?1:(selected||quizHL)?2:0);
+  let v=colCache.get(key);
+  if(!v){const c=d3.color(baseColor(f));c.opacity=f===hovered?.95:((selected||quizHL)?.40:.66);v=c.formatRgb();colCache.set(key,v);}
+  return v;
 }
-function altOf(f){return f===selected||(quizHL&&quizHL.f===f)?0.06:f===hovered?0.035:0.008;}
-function refresh(){world.polygonCapColor(f=>colorOf(f)).polygonAltitude(f=>altOf(f));}
+// নির্বাচিত দেশ গ্লোব থেকে স্পষ্ট উঁচু হয়ে ওঠে; ছোট দেশ আরও বেশি উঁচু (যাতে দেখা যায়)
+function hiAlt(f){const a=Math.max(f.garea||0.002,0.0004);return Math.max(0.05,Math.min(0.15,0.012/Math.sqrt(a)));}
+function isHi(f){return f===selected||(quizHL&&quizHL.f===f);}
+const altOf=f=>isHi(f)?hiAlt(f):0.006;
+function sideOf(f){
+  if(quizHL&&quizHL.f===f)return quizHL.ok?'rgba(30,150,80,.98)':'rgba(190,40,60,.98)';
+  if(f===selected)return 'rgba(230,130,0,.98)';
+  return 'rgba(255,255,255,.06)';
+}
+const strokeOf=f=>isHi(f)?'#ffffff':'rgba(10,15,30,.7)';
+function refresh(){colCache.clear();world.polygonCapColor(f=>colorOf(f)).polygonAltitude(f=>altOf(f)).polygonSideColor(f=>sideOf(f)).polygonStrokeColor(f=>strokeOf(f));}
+let hoverRaf=0;
+function refreshHover(){if(hoverRaf)return;hoverRaf=requestAnimationFrame(()=>{hoverRaf=0;world.polygonCapColor(f=>colorOf(f));});}
 
 function legend(){
   const L=$('#legend');
@@ -369,29 +441,39 @@ function legend(){
 }
 
 /* ---------- গ্লোব ---------- */
+const ROT_BASE=0.75; // ≈ ৪.৫°/সেকেন্ড
 function initGlobe(){
   const el=$('#globe');
-  world=Globe()(el)
+  world=Globe({animateIn:false,rendererConfig:{antialias:true,powerPreference:'high-performance'}})(el)
     .globeImageUrl(IMG+'earth-blue-marble.jpg')
     .bumpImageUrl(IMG+'earth-topology.png')
     .backgroundImageUrl(IMG+'night-sky.png')
-    .atmosphereColor('#6bb8ff').atmosphereAltitude(0.2)
+    .atmosphereColor('#6bb8ff').atmosphereAltitude(0.18)
     .polygonsData(features)
-    .polygonSideColor(()=>'rgba(255,255,255,0.08)')
-    .polygonStrokeColor(()=>'rgba(10,15,30,.75)')
-    .polygonsTransitionDuration(200)
+    .polygonSideColor(f=>sideOf(f))
+    .polygonStrokeColor(f=>strokeOf(f))
+    .polygonsTransitionDuration(380)
     .polygonLabel(f=>{
-      if(quiz&&quiz.mode==='locate'&&!quiz.done)return '';
+      if(quiz&&quiz.mode&&!quiz.over&&quiz.cur&&quiz.cur.kind==='locate'&&!quiz.done)return '';
       return `<div class="tip">${flagOf(f)?`<img src="${esc(flagOf(f))}">`:''}<b>${esc(nameBn(f))}</b><br><span style="color:#8fa0c8">${esc(nameEn(f))}${f.d&&f.d.population?' · '+bn(f.d.population)+' জন':''}</span></div>`;
     })
-    .onPolygonHover(f=>{hovered=f||null;el.style.cursor=f?'pointer':'grab';refresh();})
+    .onPolygonHover(f=>{if(hovered===(f||null))return;hovered=f||null;el.style.cursor=f?'pointer':'grab';refreshHover();})
     .onPolygonClick(f=>handleClick(f))
-    .labelsData([]).labelLat(d=>d.lat).labelLng(d=>d.lng).labelText(d=>d.t).labelSize(1.3).labelDotRadius(.45).labelColor(()=>'#fff').labelAltitude(0.06).labelResolution(2)
+    .labelsData([]).labelLat(d=>d.lat).labelLng(d=>d.lng).labelText(d=>d.t).labelSize(1.3).labelDotRadius(.45).labelColor(()=>'#fff').labelAltitude(0.16).labelResolution(2)
     .ringsData([]).ringColor(()=>t=>`rgba(255,213,74,${1-t})`).ringMaxRadius(3).ringPropagationSpeed(2).ringRepeatPeriod(1100)
     .pointsData([]).pointLat(d=>d.lat).pointLng(d=>d.lng).pointColor(d=>d.unesco?'#ff7ad9':'#7dffb3').pointAltitude(0.03).pointRadius(0.28)
     .pointLabel(d=>`<div class="tip"><b>${esc(d.name)}</b>${d.unesco?'<br><span style="color:#ff9be6">UNESCO বিশ্ব ঐতিহ্য</span>':''}</div>`)
     .onPointClick(d=>{setTab('info');setTimeout(()=>togglePlace(d.id),60);});
-  const c=world.controls();c.autoRotate=true;c.autoRotateSpeed=.45;c.enableDamping=true;
+  try{world.renderer().setPixelRatio(Math.min(window.devicePixelRatio||1,1.75));}catch(e){}
+  const c=world.controls();c.autoRotate=true;c.autoRotateSpeed=ROT_BASE;c.enableDamping=true;c.dampingFactor=.09;c.rotateSpeed=.55;c.zoomSpeed=.7;
+  // ফ্রেম-রেট যা-ই হোক, ঘূর্ণনের কৌণিক গতি স্থির রাখি (dt-ভিত্তিক) → ঝাঁকুনি কমে, মসৃণ ঘোরে
+  let last=0;
+  const tick=t=>{
+    const dt=last?Math.min(0.1,(t-last)/1000):1/60;last=t;
+    c.autoRotateSpeed=ROT_BASE*dt*60;
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
   world.pointOfView({lat:23.7,lng:90.4,altitude:2.3},0);
   const fit=()=>world.width(el.clientWidth).height(el.clientHeight);fit();
   addEventListener('resize',fit);
@@ -401,22 +483,22 @@ function setRotate(on){rotating=on;world.controls().autoRotate=on;$('#bRot').cla
 
 function flyTo(f,ms=1300){
   const a=f.garea||0.01;
-  const alt=Math.min(2.4,Math.max(0.4,0.35+Math.sqrt(a)*2.2));
+  const alt=Math.min(2.4,Math.max(0.45,0.38+Math.sqrt(a)*2.2));
   world.pointOfView({lat:f.cen[1],lng:f.cen[0],altitude:alt},ms);
 }
 
 function handleClick(f){
-  if(quiz&&quiz.mode==='locate'&&!quiz.done){answerLocate(f);return;}
+  if(tab==='quiz'&&quiz&&!quiz.over&&!(quiz.cur&&quiz.cur.kind==='locate')){return;}
+  if(quiz&&!quiz.over&&quiz.cur&&quiz.cur.kind==='locate'&&!quiz.done){answerLocate(f);return;}
   select(f);
 }
 
 function select(f,fly=true){
-  selected=f;setRotate(false);world.pointsData([]);
+  selected=f;quizHL=null;setRotate(false);world.pointsData([]);
   if(fly)flyTo(f);
-  if(f.d&&f.d.capitalInfo&&f.d.capitalInfo.latlng){
-    const [lat,lng]=f.d.capitalInfo.latlng;
-    world.labelsData([{lat,lng,t:capOf(f)}]);world.ringsData([{lat,lng}]);
-  }else{world.labelsData([]);world.ringsData([]);}
+  const ci=f.d&&f.d.capitalInfo&&f.d.capitalInfo.latlng;
+  const [lat,lng]=ci?ci:[f.cen[1],f.cen[0]];
+  world.labelsData(ci&&capOf(f)?[{lat,lng,t:capOf(f)}]:[]);world.ringsData([{lat,lng}]);
   refresh();
   setTab('info');
 }
@@ -430,6 +512,7 @@ function localTime(d){
   const t=new Date(Date.now()+off*60000);
   return t.toLocaleTimeString('bn-BD',{timeZone:'UTC',hour:'2-digit',minute:'2-digit'})+' ('+tz+')';
 }
+let extraT=0;
 function renderInfo(){
   const C=$('#content');
   if(tab!=='info')return;
@@ -445,7 +528,7 @@ function renderInfo(){
   if(!hasDetails){C.innerHTML=`<div class="card hero"><div><h2>${esc(nameBn(f))}</h2><div class="en">দেশটি নির্বাচিত হয়েছে, কিন্তু বিস্তারিত তথ্য সার্ভার থেকে আসেনি। ইন্টারনেট সংযোগ পরীক্ষা করে পৃষ্ঠা রিফ্রেশ করো।</div></div></div>`;return;}
   const langs=d.languages?Object.values(d.languages).join(', '):'—';
   const curs=d.currencies?Object.values(d.currencies).map(c=>c.name+(c.symbol?' ('+c.symbol+')':'')).join(', '):'—';
-  const nb=(d.borders||[]).map(c=>byCca3[c]&&byCca3[c].f?`<span class="chip" data-code="${c}">${esc(nameBn(byCca3[c].f))}</span>`:'').join('')||'<span style="color:var(--mute)">স্থলসীমানা নেই (দ্বীপরাষ্ট্র)</span>';
+  const nb=(f.nb||[]).filter(g=>g.d).map(g=>`<span class="chip" data-code="${g.d.cca3}">${esc(nameBn(g))}</span>`).join('')||'<span style="color:var(--mute)">স্থলসীমানা নেই (দ্বীপরাষ্ট্র)</span>';
   const dens=d.area&&d.population?Math.round(d.population/d.area):null;
   C.innerHTML=`
   <div class="card">
@@ -465,7 +548,7 @@ function renderInfo(){
   </div>`;
   $('#b2d').onclick=()=>open2D(f);
   $('#bBack').onclick=()=>{deselect();setRotate(true);world.pointOfView({altitude:2.3},1200);renderInfo();};
-  C.insertAdjacentHTML('beforeend','<div id="extras"></div>');loadExtras(f);
+  C.insertAdjacentHTML('beforeend','<div id="extras"></div>');clearTimeout(extraT);extraT=setTimeout(()=>{if(selected===f&&tab==='info')loadExtras(f);},350);
 }
 
 /* ---------- সার্চ ---------- */
@@ -494,78 +577,165 @@ function setupSearch(){
 
 /* ---------- কুইজ ---------- */
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
-function best(){try{return +localStorage.getItem('ee_best')||0;}catch(e){return 0;}}
-function setBest(v){try{localStorage.setItem('ee_best',v);}catch(e){}}
-
+const bestKey=m=>'ee_best_'+m;
+function best(m){try{return +localStorage.getItem(bestKey(m))||0;}catch(e){return 0;}}
+function setBest(m,v){try{localStorage.setItem(bestKey(m),v);}catch(e){}}
+const QN=10;
+const MODES=[
+  {id:'capital',ic:'🏛',t:'রাজধানী চেনো',s:'দেশ দেখে রাজধানী বেছে নাও'},
+  {id:'rcap',ic:'🔁',t:'রাজধানী থেকে দেশ',s:'রাজধানী দেখে দেশের নাম বলো'},
+  {id:'flag',ic:'🚩',t:'পতাকা চেনো',s:'পতাকা দেখে দেশ বলো'},
+  {id:'locate',ic:'📍',t:'গ্লোবে খোঁজো',s:'নাম দেখে গ্লোবে সঠিক দেশে ক্লিক করো'},
+  {id:'shape',ic:'🗺',t:'আকৃতি চেনো',s:'দেশের আকার দেখে নাম বলো'},
+  {id:'region',ic:'🧭',t:'কোন মহাদেশ?',s:'দেশটি কোন মহাদেশে অবস্থিত'},
+  {id:'big',ic:'📐',t:'কোনটি বড়?',s:'দুই দেশের মধ্যে আয়তনে বড়টি বেছে নাও'},
+  {id:'nb',ic:'🤝',t:'প্রতিবেশী চেনো',s:'কোন দেশটি প্রতিবেশী'},
+  {id:'mix',ic:'🎲',t:'মিশ্র কুইজ',s:'সব ধরনের প্রশ্ন একসাথে'}
+];
+const MIXSET=['capital','rcap','flag','locate','shape','region','big','nb'];
+const REGLIST=['Asia','Europe','Africa','Americas','Oceania'];
+let qDiff='easy';
+const areaOfF=f=>(f.d&&f.d.area)||(f.garea||0)*KM2;
+function quizPool(){
+  const sov=features.filter(f=>f.d&&f.d.sov);
+  return qDiff==='easy'?sov.filter(f=>areaOfF(f)>=40000):sov;
+}
 function renderQuizHome(){
   const C=$('#content');
-  C.innerHTML=`<div class="card"><b>🎯 কুইজ খেলো</b><div class="row" style="color:var(--mute)">প্রতি রাউন্ডে ১০টি প্রশ্ন। সর্বোচ্চ স্কোর: <b style="color:var(--gold)">${bn(best())}</b>/১০</div></div>
-  <div class="modes">
-    <button class="btn" data-m="capital">🏛 রাজধানী চেনো<small>দেশ দেখে রাজধানী বেছে নাও</small></button>
-    <button class="btn" data-m="flag">🚩 পতাকা চেনো<small>পতাকা দেখে দেশ বলো</small></button>
-    <button class="btn" data-m="locate">📍 গ্লোবে খোঁজো<small>নাম দেখে গ্লোবে সঠিক দেশে ক্লিক করো</small></button>
-  </div>`;
+  C.innerHTML=`<div class="card"><b>🎯 কুইজ খেলো</b><div class="row" style="color:var(--mute)">প্রতি রাউন্ডে ${bn(QN)}টি প্রশ্ন।</div>
+  <div class="dif"><button data-d="easy" class="${qDiff==='easy'?'on':''}">😊 সহজ <small>(বড় দেশ)</small></button><button data-d="hard" class="${qDiff==='hard'?'on':''}">🔥 কঠিন <small>(সব দেশ)</small></button></div></div>
+  <div class="modes">${MODES.map(m=>`<button class="btn" data-m="${m.id}">${m.ic} ${m.t}<small>${m.s} · সর্বোচ্চ ${bn(best(m.id))}/${bn(QN)}</small></button>`).join('')}</div>`;
   C.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>startQuiz(b.dataset.m));
+  C.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{qDiff=b.dataset.d;renderQuizHome();});
+}
+// প্রশ্ন তৈরি: {kind:'mc'|'locate', head, opts:[{t,ok}], right, focus, recap}
+function pickWrong(pool,n,okFn,textFn){
+  const out=[],seen=new Set();
+  for(const x of shuffle(pool)){if(out.length>=n)break;if(!okFn(x))continue;const t=textFn(x);if(!t||seen.has(t))continue;seen.add(t);out.push(t);}
+  return out;
+}
+function buildQ(mode,f,pool){
+  const nm=nameBn(f);
+  if(mode==='capital'){
+    const right=capOf(f);if(!right)return null;
+    const w=pickWrong(pool,3,x=>x!==f&&capOf(x)!==right,capOf);if(w.length<3)return null;
+    return {kind:'mc',head:`<span class="qflag"><img src="${esc(flagOf(f))}" alt=""></span><b>${esc(nm)}</b>-এর রাজধানী কোনটি?`,opts:shuffle([right,...w]).map(t=>({t,ok:t===right})),right,focus:f,recap:nm+' → রাজধানী?'};
+  }
+  if(mode==='rcap'){
+    const cap=capOf(f);if(!cap)return null;
+    const w=pickWrong(pool,3,x=>x!==f,nameBn);if(w.length<3)return null;
+    return {kind:'mc',head:`<b>${esc(cap)}</b> কোন দেশের রাজধানী?`,opts:shuffle([nm,...w]).map(t=>({t,ok:t===nm})),right:nm,focus:f,recap:cap+' কোন দেশের রাজধানী?'};
+  }
+  if(mode==='flag'){
+    const w=pickWrong(pool,3,x=>x!==f,nameBn);if(w.length<3)return null;
+    return {kind:'mc',head:`এই পতাকাটি কোন দেশের?<div><img class="bigflag" src="${esc(flagOf(f))}" alt=""></div>`,opts:shuffle([nm,...w]).map(t=>({t,ok:t===nm})),right:nm,focus:f,recap:'পতাকা: '+nm};
+  }
+  if(mode==='shape'){
+    const w=pickWrong(pool,3,x=>x!==f,nameBn);if(w.length<3)return null;
+    let svg='';
+    try{
+      const pr=d3.geoAzimuthalEqualArea().rotate([-f.cen[0],-f.cen[1]]).fitExtent([[8,8],[212,172]],f.full);
+      svg=`<svg class="shape" viewBox="0 0 220 180"><path d="${d3.geoPath(pr).digits(1)(f.full)}" fill="#4fb3ff" fill-opacity=".85" stroke="#fff" stroke-width=".8"/></svg>`;
+    }catch(e){return null;}
+    return {kind:'mc',head:`এই আকারটি কোন দেশের?<div>${svg}</div>`,opts:shuffle([nm,...w]).map(t=>({t,ok:t===nm})),right:nm,focus:f,recap:'আকৃতি: '+nm};
+  }
+  if(mode==='region'){
+    if(!REGLIST.includes(f.d.region))return null;
+    const right=REG[f.d.region];
+    return {kind:'mc',head:`<b>${esc(nm)}</b> কোন মহাদেশে অবস্থিত?`,opts:REGLIST.map(k=>({t:REG[k],ok:REG[k]===right})),right,focus:f,recap:nm+' কোন মহাদেশে?'};
+  }
+  if(mode==='big'){
+    const cand=shuffle(pool.filter(x=>x!==f));
+    const o=cand.find(x=>{const r=areaOfF(f)/areaOfF(x);return r>1.3||r<1/1.3;});if(!o)return null;
+    const big=areaOfF(f)>areaOfF(o)?f:o;
+    return {kind:'mc',head:`কোন দেশটি আয়তনে <b>বড়</b>?`,opts:shuffle([f,o]).map(x=>({t:nameBn(x),ok:x===big})),right:nameBn(big),focus:big,recap:nm+' বনাম '+nameBn(o)+' — কোনটি বড়?'};
+  }
+  if(mode==='nb'){
+    const nbs=(f.nb||[]).filter(g=>g.d&&g.d.sov);if(!nbs.length)return null;
+    const right=nameBn(shuffle(nbs)[0]);
+    const near=new Set(nbs.concat([f]));
+    const same=pool.filter(x=>!near.has(x)&&x.d.region===f.d.region),rest=pool.filter(x=>!near.has(x));
+    let w=pickWrong(same,3,()=>true,nameBn);
+    if(w.length<3)w=w.concat(pickWrong(rest,6,x=>true,nameBn).filter(t=>!w.includes(t))).slice(0,3);
+    if(w.length<3)return null;
+    return {kind:'mc',head:`নিচের কোন দেশটি <b>${esc(nm)}</b>-এর প্রতিবেশী (স্থলসীমানা আছে)?`,opts:shuffle([right,...w]).map(t=>({t,ok:t===right})),right,focus:f,recap:nm+'-এর প্রতিবেশী কোনটি?'};
+  }
+  if(mode==='locate')return {kind:'locate',head:`📍 গ্লোবে খুঁজে বের করো:<br><b style="font-size:21px">${esc(nm)}</b>`,right:nm,focus:f,recap:'গ্লোবে খোঁজো: '+nm};
+  return null;
+}
+function makeQuestions(mode,pool){
+  const qs=[],order=shuffle(pool);
+  let guard=0;
+  for(const f of order){
+    if(qs.length>=QN)break;
+    const m=mode==='mix'?MIXSET[Math.random()*MIXSET.length|0]:mode;
+    let q=buildQ(m,f,pool);
+    if(!q&&mode==='mix'){for(const m2 of shuffle(MIXSET)){q=buildQ(m2,f,pool);if(q)break;}}
+    if(q)qs.push(q);
+    if(++guard>400)break;
+  }
+  return qs;
 }
 function startQuiz(mode){
-  const pool=features.filter(f=>f.d&&capOf(f)&&flagOf(f));
-  if(pool.length<12){$('#content').innerHTML='<div class="card">কুইজের জন্য দেশের তথ্য লোড হয়নি। ইন্টারনেট চালু করে পেজ রিলোড করো।</div>';return;}
+  const pool=quizPool();
+  if(pool.length<12){$('#content').innerHTML='<div class="card">কুইজের জন্য যথেষ্ট দেশ পাওয়া যায়নি। পেজ রিলোড করে আবার চেষ্টা করো।</div>';return;}
+  const qs=makeQuestions(mode,pool);
+  if(qs.length<5){$('#content').innerHTML='<div class="card">এই কুইজের জন্য যথেষ্ট প্রশ্ন বানানো যায়নি। অন্য ধরন বেছে নাও।</div><div class="btns"><button class="btn alt" id="qh">← কুইজ তালিকা</button></div>';$('#qh').onclick=()=>renderQuizHome();return;}
   deselect();quizHL=null;
-  quiz={mode,pool,qs:shuffle(pool).slice(0,10),i:0,score:0,streak:0,done:false};
+  quiz={mode,qs,i:0,score:0,streak:0,done:false,over:false,wrong:[],cur:null};
   setRotate(false);world.pointOfView({altitude:2.4},900);
   renderQ();
 }
 function renderQ(){
-  const C=$('#content'),q=quiz.qs[quiz.i];quiz.done=false;quizHL=null;refresh();
-  const head=`<div class="qhead"><span>প্রশ্ন ${bn(quiz.i+1)}/১০</span><span>স্কোর ${bn(quiz.score)} · 🔥 ${bn(quiz.streak)}</span></div><div class="bar"><i style="width:${quiz.i*10}%"></i></div>`;
-  if(quiz.mode==='capital'){
-    const opts=shuffle([capOf(q),...shuffle(quiz.pool.filter(x=>capOf(x)!==capOf(q))).slice(0,3).map(capOf)]);
-    C.innerHTML=`<div class="card">${head}<div class="qtext">${q.d&&flagOf(q)?`<img src="${esc(flagOf(q))}" style="width:40px;vertical-align:middle;border-radius:3px;margin-right:8px">`:''}<b>${esc(nameBn(q))}</b>-এর রাজধানী কোনটি?</div>${opts.map(o=>`<button class="opt" data-v="${esc(o)}">${esc(o)}</button>`).join('')}<div class="fb" id="fb"></div></div>`;
-    C.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answerOpt(b,b.dataset.v===capOf(q),capOf(q)));
-  }else if(quiz.mode==='flag'){
-    const opts=shuffle([q,...shuffle(quiz.pool.filter(x=>x!==q)).slice(0,3)]);
-    C.innerHTML=`<div class="card">${head}<div class="qtext">এই পতাকাটি কোন দেশের?</div><img src="${esc(flagOf(q))}" style="width:170px;border-radius:8px;margin-bottom:12px;box-shadow:0 4px 16px #0008">${opts.map(o=>`<button class="opt" data-c="${o.d.cca3}">${esc(nameBn(o))}</button>`).join('')}<div class="fb" id="fb"></div></div>`;
-    C.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answerOpt(b,b.dataset.c===q.d.cca3,nameBn(q)));
+  const C=$('#content'),q=quiz.qs[quiz.i],N=quiz.qs.length;quiz.done=false;quiz.cur=q;quizHL=null;refresh();
+  const head=`<div class="qhead"><span>প্রশ্ন ${bn(quiz.i+1)}/${bn(N)}</span><span>স্কোর ${bn(quiz.score)} · 🔥 ${bn(quiz.streak)}</span></div><div class="bar"><i style="width:${quiz.i/N*100}%"></i></div>`;
+  if(q.kind==='mc'){
+    C.innerHTML=`<div class="card">${head}<div class="qtext">${q.head}</div>${q.opts.map((o,i)=>`<button class="opt" data-i="${i}">${esc(o.t)}</button>`).join('')}<div class="fb" id="fb"></div></div>`;
+    C.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answerOpt(b,+b.dataset.i));
   }else{
-    C.innerHTML=`<div class="card">${head}<div class="qtext">📍 গ্লোবে খুঁজে বের করো:<br><b style="font-size:21px">${esc(nameBn(q))}</b></div><div class="fb" id="fb" style="color:var(--mute)">গ্লোব ঘুরিয়ে সঠিক দেশে ক্লিক করো</div><div class="btns"><button class="btn alt" id="skip">ছেড়ে দাও</button></div></div>`;
+    C.innerHTML=`<div class="card">${head}<div class="qtext">${q.head}</div><div class="fb" id="fb" style="color:var(--mute)">গ্লোব ঘুরিয়ে সঠিক দেশে ক্লিক করো।</div><div class="btns"><button class="btn alt" id="skip">⏭ জানি না</button></div></div>`;
     $('#skip').onclick=()=>finishLocate(null);
   }
 }
 function feedback(ok,right){
   quiz.done=true;
-  if(ok){quiz.score++;quiz.streak++;}else quiz.streak=0;
+  const q=quiz.cur;
+  if(ok){quiz.score++;quiz.streak++;}else{quiz.streak=0;quiz.wrong.push({q:q.recap,a:right});}
   const fb=$('#fb');
   fb.innerHTML=ok?`✅ সঠিক! ${quiz.streak>=3?'🔥 টানা '+bn(quiz.streak)+'টি!':''}`:`❌ ভুল। সঠিক উত্তর: <b>${esc(right)}</b>`;
   fb.style.color=ok?'var(--ok)':'var(--bad)';
-  const last=quiz.i>=9;
+  const last=quiz.i>=quiz.qs.length-1;
   fb.insertAdjacentHTML('afterend',`<div class="btns"><button class="btn" id="nx">${last?'ফলাফল দেখো':'পরের প্রশ্ন →'}</button></div>`);
   $('#nx').onclick=()=>{quiz.i++;last?endQuiz():renderQ();};
 }
-function answerOpt(btn,ok,right){
+function answerOpt(btn,i){
   if(quiz.done)return;
-  document.querySelectorAll('.opt').forEach(b=>{b.disabled=true;});
-  btn.classList.add(ok?'ok':'bad');
-  if(!ok){document.querySelectorAll('.opt').forEach(b=>{if((quiz.mode==='capital'&&b.dataset.v===right)||(quiz.mode==='flag'&&b.textContent===right))b.classList.add('ok');});}
-  const q=quiz.qs[quiz.i];quizHL={f:q,ok};flyTo(q,1000);refresh();
-  feedback(ok,right);
+  const q=quiz.cur,ok=q.opts[i].ok;
+  const bs=document.querySelectorAll('.opt');
+  bs.forEach((b,k)=>{b.disabled=true;if(q.opts[k].ok)b.classList.add('ok');});
+  if(!ok)btn.classList.add('bad');
+  quizHL={f:q.focus,ok:true};
+  flyTo(q.focus,1000);refresh();
+  feedback(ok,q.right);
 }
 function answerLocate(f){
-  const q=quiz.qs[quiz.i];
-  if(f===q)finishLocate(true,q);
-  else finishLocate(false,q,f);
+  const q=quiz.cur;
+  if(f===q.focus)finishLocate(true,f);else finishLocate(false,f);
 }
-function finishLocate(ok,q,wrongF){
+function finishLocate(ok,clicked){
   if(quiz.done)return;
-  q=q||quiz.qs[quiz.i];
-  quizHL={f:q,ok:ok===true};flyTo(q,1100);refresh();
-  feedback(ok===true,ok===false&&wrongF?`${nameBn(q)} (তুমি ক্লিক করেছ: ${nameBn(wrongF)})`:nameBn(q));
+  const q=quiz.cur;
+  quizHL={f:q.focus,ok:ok===true};flyTo(q.focus,1100);refresh();
+  feedback(ok===true,ok===false&&clicked?`${q.right} (তুমি ক্লিক করেছ: ${nameBn(clicked)})`:q.right);
 }
 function endQuiz(){
-  const C=$('#content'),s=quiz.score;let nb=false;
-  if(s>best()){setBest(s);nb=true;}
-  const msg=s>=9?'অসাধারণ! তুমি তো চলন্ত মানচিত্র! 🏆':s>=6?'দারুণ খেলেছ! 👏':s>=3?'ভালো চেষ্টা! আবার চেষ্টা করো 💪':'চলো আবার চেষ্টা করি 🌱';
-  quizHL=null;quiz.done=true;refresh();
-  C.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:46px">${s>=6?'🎉':'🌍'}</div><h2 style="margin:6px 0">${bn(s)} / ১০</h2><div>${msg}</div>${nb?'<div style="color:var(--gold);margin-top:6px">🌟 নতুন সর্বোচ্চ স্কোর!</div>':''}<div class="btns" style="justify-content:center"><button class="btn" id="again">আবার খেলো</button><button class="btn alt" id="qh">মোড বদলাও</button></div></div>`;
+  const C=$('#content'),s=quiz.score,N=quiz.qs.length;let nb=false;
+  if(s>best(quiz.mode)){setBest(quiz.mode,s);nb=true;}
+  const msg=s>=N*.9?'অসাধারণ! তুমি তো চলন্ত মানচিত্র! 🏆':s>=N*.6?'দারুণ খেলেছ! 👏':s>=N*.3?'ভালো চেষ্টা! আবার চেষ্টা করো 💪':'চলো আবার চেষ্টা করি 🌱';
+  quizHL=null;quiz.done=true;quiz.over=true;quiz.cur=null;refresh();
+  C.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:46px">${s>=N*.6?'🎉':'🌍'}</div><h2 style="margin:6px 0">${bn(s)} / ${bn(N)}</h2><div>${msg}</div>${nb?'<div style="color:var(--gold);margin-top:6px">🌟 নতুন সর্বোচ্চ স্কোর!</div>':''}
+  <div class="btns" style="justify-content:center"><button class="btn" id="again">🔄 আবার খেলো</button><button class="btn alt" id="qh">← কুইজ তালিকা</button></div></div>
+  ${quiz.wrong.length?`<div class="card"><b>যেগুলো ভুল হয়েছিল</b><ul class="rev">${quiz.wrong.map(w=>`<li>${esc(w.q)}<br><span>✔ ${esc(w.a)}</span></li>`).join('')}</ul></div>`:''}`;
   $('#again').onclick=()=>startQuiz(quiz.mode);
   $('#qh').onclick=()=>{quiz=null;renderQuizHome();};
 }
@@ -573,109 +743,168 @@ function endQuiz(){
 function setTab(t){
   tab=t;document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
   if(t==='info'){renderInfo();}
-  else{ if(quiz&&!quiz.done&&quiz.i<10)renderQ(); else renderQuizHome(); }
+  else{ if(quiz&&!quiz.over)renderQ(); else renderQuizHome(); }
 }
 
 /* ---------- ২D মানচিত্র ---------- */
-const M={tok:0,ctok:0,showPl:true,proj:null,k:1,svg:null,g:null,zoom:null,f:null,level:null,cache:{},feats:null};
+const M={tok:0,ctok:0,sess:0,showPl:true,proj:null,k:1,svg:null,g:null,zoom:null,f:null,level:null,cache:{},pending:{},unavail:{},logs:{},auto:true,feats:null};
 const PAL=['#8ecae6','#ffb703','#b7e4c7','#f4a6c0','#cdb4db','#ffd6a5','#a0c4ff','#fdffb6','#caffbf','#ffc6ff'];
 
 function open2D(f){
   if(!f)return;
-  if(!f.d){$('#mstat').textContent='দেশের ISO কোড শনাক্ত করা যায়নি; অনুগ্রহ করে পেজ রিফ্রেশ করো।';return;}
-  M.f=f;M.cache={};M.feats=null;M.log=[];M.fell=null;hideDiag();
+  if(!f.d){$('#mstat').textContent='দেশের ISO কোড শনাক্ত করা যায়নি।';$('#modal').style.display='flex';return;}
+  M.sess=(M.sess||0)+1;M.tok++;
+  M.f=f;M.cache={};M.pending={};M.unavail={};M.logs={};M.auto=true;M.level=null;hideDiag();
   $('#modal').style.display='flex';
   $('#mflag').src=flagOf(f);$('#mtitle').textContent=nameBn(f)+' — মানচিত্র';
   $('#mstat').textContent='লোড হচ্ছে…';
   drawMap(null);
   $('#mcard').style.display='none';M.showPl=true;$('#lvP').classList.add('on');
+  updLv();
   ensurePlaces(f);
-  loadLevel('ADM2',true);
+  loadLevel('ADM1',true);
 }
-function close2D(){$('#modal').style.display='none';M.tok++;}
+function close2D(){$('#modal').style.display='none';M.tok++;M.sess=(M.sess||0)+1;}
 
-/* ---------- সীমানা: ডেটা আনা + যাচাই + winding ঠিক করা ---------- */
-const TWO_PI=2*Math.PI;
-// d3 চায় বহিঃরেখা ঘড়ির কাঁটার দিকে, ছিদ্র উল্টো দিকে। RFC 7946 GeoJSON সাধারণত উল্টো (CCW) —
-// তখন d3 পুরো পৃথিবী "ভরাট" ধরে নেয় এবং মানচিত্র অতি ক্ষুদ্র/উল্টো হয়ে যায়। তাই প্রতিটি রিং ঠিক করা হয়।
-function rewindRing(ring,isHole){
-  if(!Array.isArray(ring)||ring.length<4)return ring;
-  const area=d3.geoArea({type:'Polygon',coordinates:[ring]});
-  const wrong=isHole?(area<TWO_PI):(area>TWO_PI);
-  return wrong?ring.slice().reverse():ring;
+/* ---------- সীমানা: ডেটা আনা + যাচাই + সরলীকরণ + winding ঠিক করা ---------- */
+// ক্যাশ: IndexedDB (একবার এলে পরেরবার তাৎক্ষণিক)
+const idb={db:null,
+  open(){return this.db||(this.db=new Promise((res,rej)=>{try{const r=indexedDB.open('ee_cache',1);r.onupgradeneeded=()=>r.result.createObjectStore('gb');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}catch(e){rej(e);}}));},
+  async get(k){try{const db=await this.open();return await new Promise(res=>{const q=db.transaction('gb').objectStore('gb').get(k);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null);});}catch(e){return null;}},
+  async set(k,v){try{const db=await this.open();db.transaction('gb','readwrite').objectStore('gb').put(v,k);}catch(e){}}
+};
+// d3 চায় বহিঃরেখা ঘড়ির কাঁটার দিকে (lon/lat-এ shoelace ঋণাত্মক), ছিদ্র উল্টো। RFC 7946 ফাইল উল্টো — তাই ঘুরিয়ে দিই।
+// d3.geoArea-র বদলে হালকা planar হিসাব (antimeridian unwrap সহ) → বড় ফাইলেও দ্রুত।
+function signedArea(r){
+  let s=0,off=0,px=r[0][0],py=r[0][1];
+  for(let i=1;i<r.length;i++){
+    let x=r[i][0];const dx=x-r[i-1][0];
+    if(dx>180)off-=360;else if(dx<-180)off+=360;
+    x+=off;const y=r[i][1];
+    s+=px*y-x*py;px=x;py=y;
+  }
+  return s/2;
 }
-function rewindPolygon(rings){return rings.map((r,i)=>rewindRing(r,i>0));}
-function rewindGeometry(g){
-  if(!g)return g;
-  if(g.type==='Polygon')return {type:'Polygon',coordinates:rewindPolygon(g.coordinates)};
-  if(g.type==='MultiPolygon')return {type:'MultiPolygon',coordinates:g.coordinates.map(rewindPolygon)};
-  if(g.type==='GeometryCollection')return {type:'GeometryCollection',geometries:g.geometries.map(rewindGeometry)};
-  return g;
+const rd4=p=>[Math.round(p[0]*1e4)/1e4,Math.round(p[1]*1e4)/1e4];
+function thinRing(r,tol2){
+  const n=r.length;
+  if(!tol2||n<=12)return r.map(rd4);
+  const out=[rd4(r[0])];let lx=r[0][0],ly=r[0][1];
+  for(let i=1;i<n-1;i++){const dx=r[i][0]-lx,dy=r[i][1]-ly;if(dx*dx+dy*dy>=tol2){out.push(rd4(r[i]));lx=r[i][0];ly=r[i][1];}}
+  out.push(rd4(r[n-1]));
+  return out.length>=4?out:r.map(rd4);
 }
-// যেকোনো উত্তরকে নিরাপদ FeatureCollection-এ রূপান্তর; অবৈধ হলে নির্দিষ্ট কারণসহ ত্রুটি।
+function fixRing(r,isHole,tol2){
+  if(!Array.isArray(r)||r.length<4)return null;
+  r=thinRing(r,tol2);
+  const a=signedArea(r);
+  if(a===0)return null;
+  const wrong=isHole?(a<0):(a>0);
+  return wrong?r.slice().reverse():r;
+}
+function fixPolygon(rings,tol2){
+  const out=[];
+  rings.forEach((r,i)=>{const x=fixRing(r,i>0,tol2);if(x)out.push(x);});
+  return out.length&&out[0]?out:null;
+}
+function fixGeometry(g,tol2){
+  if(g.type==='Polygon'){const p=fixPolygon(g.coordinates,tol2);return p?{type:'Polygon',coordinates:p}:null;}
+  if(g.type==='MultiPolygon'){const ps=g.coordinates.map(p=>fixPolygon(p,tol2)).filter(Boolean);return ps.length?{type:'MultiPolygon',coordinates:ps}:null;}
+  return null;
+}
+function countPoints(feats){let n=0,minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+  const ring=r=>{n+=r.length;for(let i=0;i<r.length;i+=Math.max(1,r.length>400?(r.length/200|0):1)){const p=r[i];if(p[0]<minx)minx=p[0];if(p[0]>maxx)maxx=p[0];if(p[1]<miny)miny=p[1];if(p[1]>maxy)maxy=p[1];}};
+  feats.forEach(f=>{const g=f.geometry;(g.type==='Polygon'?[g.coordinates]:g.coordinates).forEach(p=>p.forEach(ring));});
+  return {n,w:maxx-minx,h:maxy-miny};}
+// যেকোনো উত্তরকে নিরাপদ, হালকা FeatureCollection-এ রূপান্তর; অবৈধ হলে নির্দিষ্ট কারণসহ ত্রুটি।
 function normalizeBoundary(data){
   if(!data||typeof data!=='object')throw new Error('উত্তর JSON অবজেক্ট নয়');
   let feats;
   if(data.type==='FeatureCollection'&&Array.isArray(data.features))feats=data.features;
   else if(data.type==='Feature')feats=[data];
   else if(data.type==='Topology')throw new Error('TopoJSON এসেছে, GeoJSON আশা করা হয়েছিল');
-  else throw new Error('অচেনা ফরম্যাট (type='+JSON.stringify(data.type)+'; কী: '+Object.keys(data).slice(0,8).join(',')+')');
+  else throw new Error('অচেনা ফরম্যাট (type='+JSON.stringify(data.type)+')');
   if(!feats.length)throw new Error('GeoJSON-এ কোনো feature নেই');
-  const ok=feats.filter(f=>f&&f.geometry&&/Polygon/.test(f.geometry.type)&&f.geometry.coordinates&&f.geometry.coordinates.length);
+  const ok=feats.filter(f=>f&&f.geometry&&/^(Multi)?Polygon$/.test(f.geometry.type)&&f.geometry.coordinates&&f.geometry.coordinates.length);
   if(!ok.length)throw new Error(feats.length+'টি feature আছে কিন্তু কোনোটিতে Polygon জিওমেট্রি নেই');
-  return {type:'FeatureCollection',features:ok.map(f=>({type:'Feature',properties:f.properties||{},geometry:rewindGeometry(f.geometry)}))};
+  const st=countPoints(ok);
+  // বিন্দু অনেক বেশি হলে (ভারী ফাইল) দূরত্ব-ভিত্তিক সরলীকরণ: SVG দ্রুত আঁকে ও জুম মসৃণ থাকে
+  let tol2=0;
+  if(st.n>60000){const tol=Math.min(0.04,Math.max(0.0004,Math.max(st.w,st.h)/1800));tol2=tol*tol;}
+  const out=[];
+  ok.forEach(f=>{const g=fixGeometry(f.geometry,tol2);if(g)out.push({type:'Feature',properties:f.properties||{},geometry:g});});
+  if(!out.length)throw new Error('জিওমেট্রি প্রসেস করা যায়নি');
+  return {type:'FeatureCollection',features:out};
 }
-// একাধিক উৎস: প্রথমে সব সরাসরি (দ্রুত, সমান্তরাল), তারপর CORS-প্রক্সি। প্রতিটি ধাপ log-এ লেখা হয়।
+function firstOk(ps){
+  return new Promise((res,rej)=>{let n=ps.length;const errs=[];if(!n)return rej(errs);
+    ps.forEach(p=>p.then(res,e=>{errs.push(e);if(--n===0)rej(errs);}));});
+}
+// দ্রুত উপায়: কয়েকটি উৎসে একসাথে (race) অনুরোধ, প্রথম বৈধ উত্তরই জেতে, বাকিগুলো বাতিল।
 async function fetchBoundary(iso,lvl,log){
-  const API=`https://www.geoboundaries.org/api/current/gbOpen/${iso}/${lvl}/`;
-  const cands=[],seen=new Set();
-  const add=(label,u)=>{if(typeof u==='string'&&u&&!seen.has(u)){seen.add(u);cands.push({label,u});}};
-  // ধাপ ১: সরকারি API
-  try{
-    let meta=await getJSON(API,{timeout:15000});
-    if(Array.isArray(meta))meta=meta[0];
-    if(!meta||typeof meta!=='object')throw new Error('API উত্তর খালি/অচেনা');
-    log.push('✔ ধাপ ১ — API মেটাডেটা এসেছে');
-    if(!meta.simplifiedGeometryGeoJSON&&!meta.gjDownloadURL)log.push('  ⚠ মেটাডেটায় GeoJSON URL নেই; পাওয়া কী: '+Object.keys(meta).join(', '));
-    add('API simplified',meta.simplifiedGeometryGeoJSON);
-    add('API simplified (jsDelivr)',asJsDelivrURL(normalizeDataURL(meta.simplifiedGeometryGeoJSON||'')));
-    add('API full',meta.gjDownloadURL);
-    add('API full (jsDelivr)',asJsDelivrURL(normalizeDataURL(meta.gjDownloadURL||'')));
-  }catch(e){
-    log.push('✘ ধাপ ১ — API ব্যর্থ: '+e.message);
-  }
-  // ধাপ ২: API ছাড়াই সরাসরি রিপোজিটরি পাথ (API/CORS ব্যর্থ হলেও কাজ করবে)
-  const base=`releaseData/gbOpen/${iso}/${lvl}/geoBoundaries-${iso}-${lvl}`;
-  for(const suf of ['_simplified.geojson','.geojson']){
-    add('raw.githubusercontent'+suf,`https://raw.githubusercontent.com/wmgeolab/geoBoundaries/main/${base}${suf}`);
-    add('jsDelivr'+suf,`https://cdn.jsdelivr.net/gh/wmgeolab/geoBoundaries@main/${base}${suf}`);
-    add('media.githubusercontent'+suf,`https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/${base}${suf}`);
-  }
-  log.push(`ধাপ ২ — মোট ${cands.length}টি উৎস চেষ্টা হবে`);
-  const tryOne=async(c,opt)=>{
-    try{
-      const data=await getJSON(c.u,opt);
-      const gj=normalizeBoundary(data);
-      return {gj,c};
-    }catch(e){e.cand=c;throw e;}
+  const rel=`releaseData/gbOpen/${iso}/${lvl}/geoBoundaries-${iso}-${lvl}`;
+  const U={
+    jsd:s=>`https://cdn.jsdelivr.net/gh/wmgeolab/geoBoundaries@main/${rel}${s}`,
+    raw:s=>`https://raw.githubusercontent.com/wmgeolab/geoBoundaries/main/${rel}${s}`,
+    media:s=>`https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/${rel}${s}`
   };
-  // ধাপ ৩ক: সরাসরি, সমান্তরালে
-  const directErrs=[];
-  const direct=await Promise.all(cands.map(c=>tryOne(c,{proxies:false,timeout:20000}).then(r=>r,e=>{directErrs.push(e);return null;})));
-  for(const e of directErrs)log.push(`  ✘ [সরাসরি] ${e.cand.label}: ${e.message}`);
-  const win=direct.find(Boolean);
-  if(win){log.push(`✔ সফল: ${win.c.label} (${win.gj.features.length}টি feature)`);return win.gj;}
-  // ধাপ ৩খ: প্রক্সি (প্রথম ৩টি উৎস, ক্রমানুসারে)
-  for(const c of cands.slice(0,3)){
+  const API=`https://www.geoboundaries.org/api/current/gbOpen/${iso}/${lvl}/`;
+  let ctls=[];
+  const one=(label,url,tmo)=>{
+    const ctl=new AbortController();ctls.push(ctl);
+    const timer=setTimeout(()=>ctl.abort(),tmo);
+    return fetch(url,{signal:ctl.signal}).then(async r=>{
+      if(!r.ok){const e=new Error('HTTP '+r.status);e.status=r.status;throw e;}
+      const body=await r.text();
+      if(/^\s*version https:\/\/git-lfs/.test(body))throw new Error('Git-LFS পয়েন্টার (আসল ফাইল নয়)');
+      let data;try{data=JSON.parse(body);}catch(_){throw new Error('JSON পার্স ব্যর্থ');}
+      return {gj:normalizeBoundary(data),label};
+    }).catch(e=>{if(e&&e.name==='AbortError')e=new Error('সময় শেষ/বাতিল');e.label=label;throw e;}).finally(()=>clearTimeout(timer));
+  };
+  const viaApi=(kind,tmo)=>{
+    const ctl=new AbortController();ctls.push(ctl);const t=setTimeout(()=>ctl.abort(),12000);
+    return fetch(API,{signal:ctl.signal}).then(r=>{if(!r.ok){const e=new Error('API HTTP '+r.status);e.status=r.status;throw e;}return r.json();})
+      .then(m=>{if(Array.isArray(m))m=m[0];const u=kind==='simp'?(m&&m.simplifiedGeometryGeoJSON):(m&&m.gjDownloadURL);if(!u)throw new Error('API-তে URL নেই');return one('API '+kind,normalizeDataURL(u),tmo);})
+      .catch(e=>{if(e&&e.name==='AbortError')e=new Error('API সময় শেষ');e.label='API '+kind;throw e;}).finally(()=>clearTimeout(t));
+  };
+  const runWave=async(name,mk)=>{
+    ctls=[];
     try{
-      const r=await tryOne(c,{timeout:25000});
-      log.push(`✔ সফল (প্রক্সি/সরাসরি): ${r.c.label} (${r.gj.features.length}টি feature)`);
+      const r=await firstOk(mk());
+      ctls.forEach(c=>{try{c.abort();}catch(e){}});
+      log.push(`✔ ${name}: ${r.label} (${r.gj.features.length}টি feature)`);
       return r.gj;
-    }catch(e){log.push(`  ✘ [প্রক্সিসহ] ${c.label}: ${e.message}`);}
-  }
-  const err=new Error('সব উৎস ব্যর্থ — বিস্তারিত নিচের ডায়াগনস্টিক প্যানেলে');
-  err.allFailed=true;
-  throw err;
+    }catch(errs){
+      (Array.isArray(errs)?errs:[errs]).forEach(e=>log.push(`  ✘ [${name}] ${e&&e.label||'?'}: ${e&&e.message||e}`));
+      const nf=(Array.isArray(errs)?errs:[]).filter(e=>e&&e.status===404).length;
+      const er=new Error('সব উৎস ব্যর্থ');er.notFound=nf>=2;er.errs=errs;throw er;
+    }
+  };
+  let nf=false;
+  // ধাপ ১: সরলীকৃত (ছোট) ফাইল — সরাসরি ৪টি উৎসে সমান্তরালে
+  try{return await runWave('ধাপ১ সরলীকৃত',()=>[
+    one('jsDelivr',U.jsd('_simplified.geojson'),15000),one('raw.githubusercontent',U.raw('_simplified.geojson'),15000),
+    one('media.githubusercontent',U.media('_simplified.geojson'),20000),viaApi('simp',20000)]);
+  }catch(e){nf=e.notFound;}
+  if(nf){const er=new Error('এই দেশের জন্য '+lvl+' সীমানা geoBoundaries-এ নেই');er.notFound=true;throw er;}
+  // ধাপ ২: পূর্ণ ফাইল (বড়; ক্লায়েন্টে সরলীকৃত হবে)
+  try{return await runWave('ধাপ২ পূর্ণ',()=>[
+    one('jsDelivr full',U.jsd('.geojson'),40000),one('media full',U.media('.geojson'),40000),one('raw full',U.raw('.geojson'),40000),viaApi('full',40000)]);
+  }catch(e){}
+  // ধাপ ৩: CORS-প্রক্সি
+  try{return await runWave('ধাপ৩ প্রক্সি',()=>{
+    const e=encodeURIComponent(U.jsd('_simplified.geojson'));
+    return [one('corsproxy',`https://corsproxy.io/?url=${e}`,25000),one('allorigins',`https://api.allorigins.win/raw?url=${e}`,25000)];
+  });}catch(e){}
+  const err=new Error('সব উৎস ব্যর্থ — বিস্তারিত নিচের ডায়াগনস্টিক প্যানেলে');err.allFailed=true;throw err;
+}
+async function fetchBoundaryCached(iso,lvl,log){
+  const key=`${iso}|${lvl}|v4`;
+  const hit=await idb.get(key);
+  if(hit&&hit.features&&hit.features.length){log.push('✔ ক্যাশ থেকে (তাৎক্ষণিক)');return hit;}
+  const gj=await fetchBoundary(iso,lvl,log);
+  idb.set(key,gj);
+  return gj;
 }
 
 /* ---------- ডায়াগনস্টিক প্যানেল ---------- */
@@ -694,39 +923,65 @@ function showDiag(log,title,isError){
 }
 function hideDiag(){const b=$('#mdiag');if(b)b.style.display='none';}
 
+const LV_BASE={ADM1:'বিভাগ (ADM1)',ADM2:'জেলা (ADM2)'};
+function updLv(){
+  ['ADM1','ADM2'].forEach(l=>{
+    const b=$(l==='ADM1'?'#lv1':'#lv2');if(!b)return;
+    const suf=M.cache[l]?'':M.unavail[l]?' ✕':M.pending[l]?' ⏳':'';
+    b.textContent=LV_BASE[l]+suf;
+    b.classList.toggle('on',M.level===l);
+    b.classList.toggle('dim',!!M.unavail[l]);
+  });
+}
+function getLevel(lvl){
+  const sess=M.sess,iso=M.f.d.cca3;
+  if(M.cache[lvl])return Promise.resolve(M.cache[lvl]);
+  if(M.pending[lvl])return M.pending[lvl];
+  const log=M.logs[lvl]=[`══ ${lvl} · ${iso} ══`];
+  const p=fetchBoundaryCached(iso,lvl,log).then(gj=>{
+    if(sess===M.sess){M.cache[lvl]=gj;delete M.pending[lvl];}
+    return gj;
+  },e=>{
+    if(sess===M.sess){delete M.pending[lvl];M.unavail[lvl]=e;log.push('✘ '+lvl+' ব্যর্থ: '+(e&&e.message||e));}
+    throw e;
+  });
+  M.pending[lvl]=p;updLv();
+  // ব্যাকগ্রাউন্ড লোড শেষে বোতামের অবস্থা হালনাগাদ
+  p.then(()=>{if(sess===M.sess)updLv();},()=>{if(sess===M.sess)updLv();});
+  return p;
+}
+function diagAll(){return [].concat(M.logs.ADM1||[],[''],M.logs.ADM2||[]);}
 async function loadLevel(lvl,auto){
-  if(!M.f||!M.f.d||!M.f.d.cca3){$('#mstat').textContent='দেশের ISO-3 কোড পাওয়া যায়নি; সীমানা আনা সম্ভব নয়।';return;}
-  const tok=++M.tok,iso=M.f.d.cca3;
-  if(!auto||!M.log)M.log=[];
-  const log=M.log;
-  log.push(`══ ${lvl} · ${iso} ══`);
+  const f=M.f;
+  if(!f||!f.d||!f.d.cca3){$('#mstat').textContent='দেশের ISO-3 কোড পাওয়া যায়নি; সীমানা আনা সম্ভব নয়।';return;}
+  const tok=++M.tok,sess=M.sess;
+  if(!auto)M.auto=false;
   hideDiag();
-  $('#lv1').classList.toggle('on',lvl==='ADM1');$('#lv2').classList.toggle('on',lvl==='ADM2');
-  $('#mstat').textContent=(lvl==='ADM2'?'জেলা':'বিভাগ')+'র সীমানা খোঁজা হচ্ছে…';
+  const label=lvl==='ADM2'?'জেলা':'বিভাগ';
+  if(!M.cache[lvl])$('#mstat').textContent=label+'র সীমানা আনা হচ্ছে…';
   try{
-    let gj=M.cache[lvl];
-    if(!gj){
-      gj=await fetchBoundary(iso,lvl,log);
-      if(tok!==M.tok)return;
-      M.cache[lvl]=gj;
-    }
-    if(tok!==M.tok)return;
+    const gj=await getLevel(lvl);
+    if(tok!==M.tok||sess!==M.sess)return;
     M.level=lvl;
     try{drawMap(gj,lvl);}
-    catch(de){delete M.cache[lvl];log.push('✘ প্রসেসিং/ড্র ধাপে ত্রুটি: '+(de&&de.message||de));throw new Error('সীমানা এসেছে কিন্তু আঁকতে ব্যর্থ: '+(de&&de.message||de));}
-    if(M.fell){
-      $('#mstat').textContent+=` — (${M.fell} আনা যায়নি, তাই এটি দেখানো হচ্ছে)`;
-      showDiag(log,`⚠ ${M.fell}-এর সীমানা আসেনি; ${lvl} দেখানো হচ্ছে (বিস্তারিত)`,false);
-    }
+    catch(de){delete M.cache[lvl];throw new Error('সীমানা এসেছে কিন্তু আঁকতে ব্যর্থ: '+(de&&de.message||de));}
+    updLv();
+    if(lvl==='ADM1')prefetchADM2();
   }catch(e){
-    if(tok!==M.tok)return;
+    if(tok!==M.tok||sess!==M.sess)return;
     console.warn(e);
-    log.push(`✘ ${lvl} ব্যর্থ: ${e&&e.message||e}`);
-    if(auto&&lvl==='ADM2'){M.fell='ADM2';loadLevel('ADM1',true);return;}
-    const failed=M.fell?'ADM2 ও ADM1':lvl;M.fell=null;
-    $('#mstat').textContent='সীমানা লোড হয়নি ('+failed+'): '+String(e&&e.message||e).slice(0,160)+' — শুধু দেশের রূপরেখা দেখানো হচ্ছে।';
-    drawMap(null);
-    showDiag(log,'❌ সীমানা লোড ব্যর্থ — এই লেখাটি কপি করে পাঠান',true);
+    updLv();
+    if(lvl==='ADM1'&&auto&&!M.unavail.ADM2){
+      // ADM1 নেই/ব্যর্থ → ADM2 চেষ্টা (ব্যাকগ্রাউন্ড প্রি-ফেচ শেষে নিজে থেকেই দেখাবে)
+      $('#mstat').textContent='বিভাগ-সীমানা মেলেনি; জেলা-সীমানা খোঁজা হচ্ছে…';
+      loadLevel('ADM2',true);return;
+    }
+    const bothFail=M.unavail.ADM1&&M.unavail.ADM2;
+    const allNF=[M.unavail.ADM1,M.unavail.ADM2].filter(Boolean).every(x=>x&&x.notFound);
+    $('#mstat').textContent=allNF&&bothFail?'এই দেশের জন্য geoBoundaries-এ অভ্যন্তরীণ সীমানা-ডেটা নেই — শুধু দেশের রূপরেখা দেখানো হচ্ছে।'
+      :(bothFail?'সীমানা লোড হয়নি — শুধু দেশের রূপরেখা দেখানো হচ্ছে।':label+'র সীমানা পাওয়া যায়নি ('+String(e&&e.message||e).slice(0,100)+')');
+    if(!M.level)drawMap(null);
+    if(bothFail&&!allNF)showDiag(diagAll(),'❌ সীমানা লোড ব্যর্থ — এই লেখাটি কপি করে পাঠান',true);
   }
 }
 
@@ -734,17 +989,18 @@ function drawMap(gj,lvl){
   const svg=d3.select('#map2d');svg.selectAll('*').remove();
   const node=svg.node(),W=node.clientWidth||900,H=node.clientHeight||600;
   svg.attr('viewBox',`0 0 ${W} ${H}`);
-  const fitTo=gj?{type:'FeatureCollection',features:gj.features}:M.f;
+  const outline=M.f.full||M.f;
+  const fitTo=gj?{type:'FeatureCollection',features:gj.features}:outline;
   const proj=d3.geoMercator().rotate([-M.f.cen[0],0]);
   proj.fitExtent([[30,30],[W-30,H-30]],fitTo);
-  const path=d3.geoPath(proj);
+  const path=d3.geoPath(proj).digits(1);
   if(gj){
     const bb=path.bounds({type:'FeatureCollection',features:gj.features});
-    if(!bb||!bb.flat().every(isFinite)||(bb[1][0]-bb[0][0])<1||(bb[1][1]-bb[0][1])<1)throw new Error('সীমানার bounds অবৈধ ('+JSON.stringify(bb)+') — জিওমেট্রি/winding সমস্যা');
+    if(!bb||!bb.flat().every(isFinite)||(bb[1][0]-bb[0][0])<1||(bb[1][1]-bb[0][1])<1)throw new Error('সীমানার bounds অবৈধ ('+JSON.stringify(bb)+')');
   }
   M.proj=proj;const mc0=$('#mcard');if(mc0)mc0.style.display='none';
   const g=svg.append('g');
-  g.append('path').datum(M.f).attr('d',path).attr('fill','#1b2c57').attr('stroke','#4fb3ff').attr('stroke-width',1.2).attr('vector-effect','non-scaling-stroke');
+  g.append('path').datum(outline).attr('d',path).attr('fill','#1b2c57').attr('stroke','#4fb3ff').attr('stroke-width',1.2).attr('vector-effect','non-scaling-stroke');
   let labels=null;
   if(gj){
     const nm=d=>d.properties.shapeName||d.properties.name||'';
@@ -755,17 +1011,33 @@ function drawMap(gj,lvl){
       .on('click',(e,d)=>openRegion(d,e.currentTarget));
     const data=gj.features.map(d=>{const b=path.bounds(d);return{n:nm(d),c:path.centroid(d),w:b[1][0]-b[0][0]};}).filter(x=>x.n&&isFinite(x.c[0]));
     labels=g.selectAll('text.lbl').data(data).join('text').attr('class','lbl').attr('x',d=>d.c[0]).attr('y',d=>d.c[1]).attr('dy','.35em').text(d=>d.n);
-    $('#mstat').textContent=`${bn(gj.features.length)}টি ${lvl==='ADM2'?'জেলা/সমতুল্য এলাকা (ADM2)':'বিভাগ/প্রদেশ (ADM1)'} · সূত্র: geoBoundaries · এলাকায় ক্লিক করলে তথ্য আসবে`;
+    const other=lvl==='ADM1'?'ADM2':'ADM1';
+    $('#mstat').textContent=`${bn(gj.features.length)}টি ${lvl==='ADM2'?'জেলা/সমতুল্য এলাকা (ADM2)':'বিভাগ/প্রদেশ (ADM1)'} · সূত্র: geoBoundaries · এলাকায় ক্লিক করে তথ্য দেখো`
+      +(lvl==='ADM1'&&M.pending.ADM2?' · জেলা-সীমানা ব্যাকগ্রাউন্ডে আসছে…':'');
   }
-  const upd=k=>{
+  let raf=0,kNow=1;
+  const upd=()=>{raf=0;const k=kNow;
+    svg.style('--sw',(.7/k)+'px');
     g.selectAll('circle.pl').attr('r',5/k).attr('stroke-width',1.5/k);
     if(!labels)return;
-    labels.attr('font-size',12/k).attr('stroke-width',3/k)
-      .style('display',d=>d.w*k>d.n.length*6.2?'block':'none');
+    labels.attr('font-size',12/k).attr('stroke-width',3/k).style('display',d=>d.w*k>d.n.length*6.2?'block':'none');
   };
-  const zoom=d3.zoom().scaleExtent([1,60]).on('zoom',e=>{g.attr('transform',e.transform);M.k=e.transform.k;upd(e.transform.k);});
+  const sched=k=>{kNow=k;if(!raf)raf=requestAnimationFrame(upd);};
+  const zoom=d3.zoom().scaleExtent([1,80]).on('zoom',e=>{g.attr('transform',e.transform);M.k=e.transform.k;sched(e.transform.k);});
   svg.call(zoom).on('dblclick.zoom',null);
-  M.svg=svg;M.g=g;M.zoom=zoom;M.k=1;upd(1);drawPlaces2D();
+  M.svg=svg;M.g=g;M.zoom=zoom;M.k=1;kNow=1;upd();drawPlaces2D();
+}
+// ADM2 ব্যাকগ্রাউন্ডে এলে এবং ব্যবহারকারী কিছু না ছুঁলে নিজে থেকেই জেলা-মানচিত্রে বদলে যাবে
+function maybeUpgrade(){
+  if(!M.f||!M.auto||M.level!=='ADM1'||!M.cache.ADM2)return;
+  loadLevel('ADM2',true);
+}
+function prefetchADM2(){
+  if(!M.f||!M.f.d)return;const sess=M.sess;
+  getLevel('ADM2').then(()=>{if(sess===M.sess)maybeUpgrade();},()=>{
+    if(sess!==M.sess)return;const s=$('#mstat');
+    if(M.level==='ADM1')s.textContent=s.textContent.replace(' · জেলা-সীমানা ব্যাকগ্রাউন্ডে আসছে…',' · জেলা-সীমানা পাওয়া যায়নি');
+  });
 }
 
 /* ---------- Wikipedia / Wikidata (ছবি, ঐতিহাসিক স্থান, এলাকার তথ্য) ---------- */
@@ -1094,8 +1366,9 @@ function bind(){
   $('#modal').addEventListener('click',e=>{if(e.target.id==='modal')close2D();});
   addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('#lb').style.display==='flex'){$('#lb').style.display='none';return;}close2D();});
   $('#mdiagCopy').onclick=async()=>{const t=$('#mdiagPre').textContent;try{await navigator.clipboard.writeText(t);$('#mdiagCopy').textContent='✔ কপি হয়েছে';}catch(e){const r=document.createRange();r.selectNodeContents($('#mdiagPre'));const sel=getSelection();sel.removeAllRanges();sel.addRange(r);$('#mdiagCopy').textContent='নির্বাচিত — Ctrl+C চাপো';}};
-  $('#lv1').onclick=()=>{M.fell=null;loadLevel('ADM1',false);};
-  $('#lv2').onclick=()=>{M.fell=null;loadLevel('ADM2',false);};
+  $('#lv1').onclick=()=>loadLevel('ADM1',false);
+  $('#lv2').onclick=()=>loadLevel('ADM2',false);
+  ['pointerdown','wheel'].forEach(ev=>$('#map2d').addEventListener(ev,()=>{M.auto=false;},{passive:true}));
   $('#zin').onclick=()=>M.svg&&M.svg.transition().duration(250).call(M.zoom.scaleBy,1.6);
   $('#zout').onclick=()=>M.svg&&M.svg.transition().duration(250).call(M.zoom.scaleBy,1/1.6);
   $('#zfit').onclick=()=>M.svg&&M.svg.transition().duration(350).call(M.zoom.transform,d3.zoomIdentity);
@@ -1106,6 +1379,7 @@ function bind(){
     if(typeof Globe==='undefined'||typeof d3==='undefined'||typeof topojson==='undefined')throw new Error('লাইব্রেরি লোড হয়নি');
     await loadData();
     initGlobe();bind();setupSearch();renderInfo();
+    enrichData().catch(e=>console.warn('দেশ-তথ্য',e));
     $('#loading').style.opacity=0;setTimeout(()=>$('#loading').remove(),600);
   }catch(e){
     console.error(e);

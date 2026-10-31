@@ -130,8 +130,10 @@ def _add_column_if_missing(d, table, column, definition):
 
 def ensure_schema_upgrades(d):
     """Safely upgrade an existing v4.x database without dropping user data."""
+    registration_col_is_new = not _column_exists(d, 'classes', 'registration_required')
     if d.pg:
         d.execute('ALTER TABLE classes ADD COLUMN IF NOT EXISTS stage TEXT')
+        d.execute('ALTER TABLE classes ADD COLUMN IF NOT EXISTS registration_required BOOLEAN NOT NULL DEFAULT TRUE')
         d.execute('ALTER TABLE chapters ADD COLUMN IF NOT EXISTS class_id BIGINT REFERENCES classes(id)')
         d.execute('ALTER TABLE questions ADD COLUMN IF NOT EXISTS class_id BIGINT REFERENCES classes(id)')
         d.execute('ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT')
@@ -151,6 +153,7 @@ def ensure_schema_upgrades(d):
         d.execute('ALTER TABLE games ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0')
     else:
         _add_column_if_missing(d, 'classes', 'stage', 'TEXT')
+        _add_column_if_missing(d, 'classes', 'registration_required', 'INTEGER NOT NULL DEFAULT 1')
         _add_column_if_missing(d, 'chapters', 'class_id', 'INTEGER REFERENCES classes(id)')
         _add_column_if_missing(d, 'questions', 'class_id', 'INTEGER REFERENCES classes(id)')
         _add_column_if_missing(d, 'students', 'email', 'TEXT')
@@ -168,6 +171,12 @@ def ensure_schema_upgrades(d):
         _add_column_if_missing(d, 'badges', 'display_order', 'INTEGER DEFAULT 0')
         _add_column_if_missing(d, 'games', 'launch_url', 'TEXT')
         _add_column_if_missing(d, 'games', 'display_order', 'INTEGER DEFAULT 0')
+    if registration_col_is_new:
+        # One-time default that keeps the old behaviour: Classes 1–4 open, 5–12 need registration.
+        # Afterwards the Admin panel (Class Access) is the only thing that changes it.
+        for row in d.fetchall('SELECT id,name FROM classes'):
+            if 1 <= _class_number_from_name(row['name']) <= 4:
+                d.execute('UPDATE classes SET registration_required=? WHERE id=?', (False, row['id']))
     d.execute('CREATE INDEX IF NOT EXISTS idx_questions_class_subject ON questions(class_id, subject_id)')
     d.execute('CREATE INDEX IF NOT EXISTS idx_chapters_class_subject ON chapters(class_id, subject_id)')
     d.execute('CREATE INDEX IF NOT EXISTS idx_quizzes_class_subject_chapter ON quizzes(class_id, subject_id, chapter_id)')
@@ -188,6 +197,52 @@ def ensure_schema_upgrades(d):
     d.execute('CREATE INDEX IF NOT EXISTS idx_bulk_import_batches_expires ON bulk_import_batches(expires_at)')
 
 
+def _class_number_from_name(class_name):
+    match = re.search(r'(\d+)', str(class_name or ''))
+    return int(match.group(1)) if match else 0
+
+
+def _reg_required(class_row):
+    """True if the Admin has made registration compulsory for this class."""
+    try:
+        value = class_row['registration_required']
+    except (KeyError, IndexError, TypeError):
+        value = None
+    if value is None:  # column missing/NULL -> legacy default
+        return _class_number_from_name(class_row['name']) > 4
+    return bool(value)
+
+
+_TO_BN_DIGITS = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+
+
+def _bn_class_ranges(numbers):
+    """[1,2,3,4,7] -> 'শ্রেণি ১–৪, ৭'; [] -> ''."""
+    nums = sorted(set(int(n) for n in numbers))
+    if not nums:
+        return ''
+    parts, start, prev = [], nums[0], nums[0]
+    for n in nums[1:] + [None]:
+        if n is not None and n == prev + 1:
+            prev = n
+            continue
+        parts.append(str(start) if start == prev else (f'{start}, {prev}' if prev == start + 1 else f'{start}–{prev}'))
+        if n is not None:
+            start = prev = n
+    return ('শ্রেণি ' + ', '.join(parts)).translate(_TO_BN_DIGITS)
+
+
+def _class_access_summary(d):
+    """Open (no registration) and registration-required class numbers, for public wording."""
+    rows = d.fetchall(f'SELECT * FROM classes WHERE active={BOOL_TRUE} ORDER BY display_order')
+    open_nums = [_class_number_from_name(c['name']) for c in rows if not _reg_required(c)]
+    req_nums = [_class_number_from_name(c['name']) for c in rows if _reg_required(c)]
+    return {
+        'open_nums': open_nums, 'req_nums': req_nums,
+        'open_label': _bn_class_ranges(open_nums), 'req_label': _bn_class_ranges(req_nums),
+    }
+
+
 def _class_stage(class_no):
     try: n=int(class_no)
     except (TypeError,ValueError): return 'স্কুল'
@@ -203,7 +258,7 @@ def _ensure_class_catalog(d):
         name=f'শ্রেণি {i}'; stage=_class_stage(i)
         row=d.fetchone('SELECT id,stage FROM classes WHERE lower(name)=lower(?) LIMIT 1',(name,))
         if not row:
-            d.execute('INSERT INTO classes(name,display_order,active,stage) VALUES(?,?,?,?)',(name,i,True,stage))
+            d.execute('INSERT INTO classes(name,display_order,active,stage,registration_required) VALUES(?,?,?,?,?)',(name,i,True,stage,i > 4))
         elif not row['stage']:
             d.execute('UPDATE classes SET stage=? WHERE id=?',(stage,row['id']))
 
@@ -593,8 +648,13 @@ def home():
             'students': d.fetchone('SELECT COUNT(*) AS n FROM students')['n'],
             'games': d.fetchone(f'SELECT COUNT(*) AS n FROM games WHERE active={BOOL_TRUE}')['n'],
         }
+        access = _class_access_summary(d)
+        class_cards = []
+        for c in classes:
+            n = _class_number_from_name(c['name'])
+            class_cards.append({'name': c['name'], 'no': n, 'reg_required': _reg_required(c)})
         return render_template(
-            'index.html', settings=settings, classes=classes, subjects=subjects,
+            'index.html', settings=settings, classes=classes, class_cards=class_cards, access=access, subjects=subjects,
             notices=notices, gallery=gallery, stats=stats,
             games=d.fetchall(f'SELECT * FROM games WHERE active={BOOL_TRUE} ORDER BY display_order,title LIMIT 6'),
         )
@@ -606,12 +666,12 @@ def home():
 @app.route('/explore/')
 def explore():
     """Earth Explorer — interactive 3D globe (static single-page app)."""
-    return app.send_static_file('explore/index.html')
-
-
-def _class_number_from_name(class_name):
-    match = re.search(r'(\d+)', str(class_name or ''))
-    return int(match.group(1)) if match else 0
+    resp = app.make_response(app.send_static_file('explore/index.html'))
+    # Always revalidate so browsers never keep showing an older Earth Explorer build.
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -619,8 +679,8 @@ def register():
     d = db()
     try:
         all_classes = d.fetchall(f'SELECT * FROM classes WHERE active={BOOL_TRUE} ORDER BY display_order')
-        # Self-registration is only available for Classes 5–12.
-        classes = [c for c in all_classes if 5 <= _class_number_from_name(c['name']) <= TOTAL_CLASS_COUNT]
+        # Self-registration is offered for the classes where the Admin has made registration compulsory.
+        classes = [c for c in all_classes if _reg_required(c)]
         selected_class_id = request.form.get('class_id', '') if request.method == 'POST' else request.args.get('class_id', '')
         if request.method == 'POST':
             display_name = request.form.get('display_name', '').strip()
@@ -630,13 +690,13 @@ def register():
             password = request.form.get('password', '')
             confirm = request.form.get('confirm_password', '')
             recovery_pin = request.form.get('recovery_pin', '').strip()
-            selected_class = d.fetchone(f'SELECT id,name FROM classes WHERE id=? AND active={BOOL_TRUE}', (int(class_id),)) if class_id.isdigit() else None
+            selected_class = d.fetchone(f'SELECT * FROM classes WHERE id=? AND active={BOOL_TRUE}', (int(class_id),)) if class_id.isdigit() else None
             if not display_name or not class_id.isdigit() or not phone:
                 flash('নাম, Class এবং মোবাইল নম্বর অবশ্যই দিতে হবে।', 'error')
             elif not selected_class:
                 flash('সঠিক Class নির্বাচন করুন।', 'error')
-            elif not (5 <= _class_number_from_name(selected_class['name']) <= TOTAL_CLASS_COUNT):
-                flash('শ্রেণি ১–৪-এ নিবন্ধন লাগে না—হোম পেজ থেকে শ্রেণি বেছে অনুশীলন করো।', 'error')
+            elif not _reg_required(selected_class):
+                flash('এই শ্রেণিতে নিবন্ধন লাগে না—হোম পেজ থেকে শ্রেণি বেছে সরাসরি অনুশীলন করো।', 'error')
             elif len(password) < 6:
                 flash('Password কমপক্ষে ৬ অক্ষরের হতে হবে।', 'error')
             elif password != confirm:
@@ -652,7 +712,7 @@ def register():
                 )
                 d.commit()
                 return render_template('registration_success.html', student_id=username, display_name=display_name)
-        return render_template('register.html', classes=classes, selected_class_id=selected_class_id)
+        return render_template('register.html', classes=classes, selected_class_id=selected_class_id, access=_class_access_summary(d))
     finally:
         d.close()
 
@@ -706,16 +766,19 @@ def forgot_password():
 
 @app.route('/practice/class/<int:class_no>')
 def guest_practice(class_no):
-    """No-registration practice for Classes 1–4 only."""
-    if class_no < 1 or class_no > 4:
-        flash('শ্রেণি ৫–১২-এর অনুশীলনের জন্য নিবন্ধন ও Admin অনুমোদন প্রয়োজন।', 'error')
-        return redirect(url_for('register'))
+    """No-registration practice — only for classes the Admin has left open."""
+    if class_no < 1 or class_no > TOTAL_CLASS_COUNT:
+        flash('সঠিক শ্রেণি নির্বাচন করুন।', 'error')
+        return redirect(url_for('home'))
     d = db()
     try:
         class_row = d.fetchone(f"SELECT * FROM classes WHERE lower(name)=lower(?) AND active={BOOL_TRUE} LIMIT 1", (f'শ্রেণি {class_no}',))
         if not class_row:
             flash('এই শ্রেণিটি এখন পাওয়া যাচ্ছে না।', 'error')
             return redirect(url_for('home'))
+        if _reg_required(class_row):
+            flash(f"{class_row['name']}-এর অনুশীলনের জন্য নিবন্ধন ও Admin অনুমোদন প্রয়োজন।", 'error')
+            return redirect(url_for('register', class_id=class_row['id']))
         subject_id = request.args.get('subject_id', '').strip()
         chapter_id = request.args.get('chapter_id', '').strip()
         subjects = d.fetchall(f'SELECT * FROM subjects WHERE active={BOOL_TRUE} ORDER BY display_order,name')
@@ -743,14 +806,14 @@ def guest_practice(class_no):
                                     ORDER BY q.id DESC LIMIT 30''', (class_row['id'],))
         return render_template('guest_practice.html', class_row=class_row, class_no=class_no, subjects=subjects,
                                chapters=chapters, questions=questions, options=options, correct_answers=correct_answers, quizzes=quiz_rows,
-                               selected_subject=subject_id, selected_chapter=chapter_id)
+                               selected_subject=subject_id, selected_chapter=chapter_id, access=_class_access_summary(d))
     finally:
         d.close()
 
 
 @app.route('/class/<int:class_no>')
 def class_entry(class_no):
-    """Home-page class selector: public practice for 1–4; approved login for 5–12."""
+    """Home-page class selector: public practice if the Admin left the class open, else approved login."""
     if class_no < 1 or class_no > TOTAL_CLASS_COUNT:
         flash('সঠিক শ্রেণি নির্বাচন করুন।', 'error')
         return redirect(url_for('home'))
@@ -760,14 +823,15 @@ def class_entry(class_no):
         if not class_row:
             flash('এই শ্রেণিটি এখন পাওয়া যাচ্ছে না।', 'error')
             return redirect(url_for('home'))
+        needs_registration = _reg_required(class_row)
         if not session.get('student_id'):
-            if class_no <= 4:
+            if not needs_registration:
                 return redirect(url_for('guest_practice', class_no=class_no))
             return redirect(url_for('register', class_id=class_row['id']))
         student_row = d.fetchone('SELECT id,active,registration_status FROM students WHERE id=?', (session['student_id'],))
         if not student_row or not student_row['active'] or (student_row['registration_status'] or 'approved').lower() != 'approved':
             session.clear()
-            if class_no <= 4:
+            if not needs_registration:
                 return redirect(url_for('guest_practice', class_no=class_no))
             return redirect(url_for('register', class_id=class_row['id']))
         d.execute('UPDATE students SET practice_class_id=?,updated_at=? WHERE id=?', (class_row['id'], datetime.utcnow().isoformat(), student_row['id']))
@@ -780,12 +844,18 @@ def class_entry(class_no):
 
 @app.route('/practice/class/<int:class_no>/quiz/<int:qid>', methods=['GET', 'POST'])
 def guest_practice_quiz(class_no, qid):
-    if class_no < 1 or class_no > 4:
-        flash('শ্রেণি ৫–১২-এর অনুশীলনের জন্য নিবন্ধন ও Admin অনুমোদন প্রয়োজন।', 'error')
-        return redirect(url_for('register'))
+    if class_no < 1 or class_no > TOTAL_CLASS_COUNT:
+        flash('সঠিক শ্রেণি নির্বাচন করুন।', 'error')
+        return redirect(url_for('home'))
     d = db()
     try:
         class_row = d.fetchone(f"SELECT * FROM classes WHERE lower(name)=lower(?) AND active={BOOL_TRUE} LIMIT 1", (f'শ্রেণি {class_no}',))
+        if not class_row:
+            flash('এই শ্রেণিটি এখন পাওয়া যাচ্ছে না।', 'error')
+            return redirect(url_for('home'))
+        if _reg_required(class_row):
+            flash(f"{class_row['name']}-এর অনুশীলনের জন্য নিবন্ধন ও Admin অনুমোদন প্রয়োজন।", 'error')
+            return redirect(url_for('register', class_id=class_row['id']))
         quiz_row = d.fetchone(f'''SELECT q.*,c.name class_name,sub.name subject_name,ch.title chapter_name
                                   FROM quizzes q LEFT JOIN classes c ON c.id=q.class_id
                                   LEFT JOIN subjects sub ON sub.id=q.subject_id LEFT JOIN chapters ch ON ch.id=q.chapter_id
@@ -1159,6 +1229,37 @@ def admin_settings():
             flash('সাইটের তথ্য সংরক্ষণ হয়েছে।', 'ok')
             s = d.fetchone('SELECT * FROM site_settings LIMIT 1')
         return render_template('admin/settings.html', settings=s)
+    finally:
+        d.close()
+
+
+@app.route('/admin/class-access', methods=['GET', 'POST'])
+@admin_required
+def admin_class_access():
+    """Admin decides, class by class, whether registration is compulsory."""
+    d = db()
+    try:
+        if request.method == 'POST':
+            rows = d.fetchall('SELECT id FROM classes')
+            bulk = request.form.get('bulk', '')
+            required_ids = {str(x) for x in request.form.getlist('required')}
+            for c in rows:
+                if bulk == 'all_required':
+                    value = True
+                elif bulk == 'all_open':
+                    value = False
+                else:
+                    value = str(c['id']) in required_ids
+                d.execute('UPDATE classes SET registration_required=? WHERE id=?', (value, c['id']))
+            d.commit()
+            flash('শ্রেণিভিত্তিক নিবন্ধন-নিয়ম সংরক্ষণ হয়েছে। পরিবর্তন সঙ্গে সঙ্গে কার্যকর।', 'ok')
+            return redirect(url_for('admin_class_access'))
+        classes = [
+            {'id': c['id'], 'name': c['name'], 'stage': c['stage'], 'active': bool(c['active']),
+             'no': _class_number_from_name(c['name']), 'required': _reg_required(c)}
+            for c in d.fetchall('SELECT * FROM classes ORDER BY display_order,id')
+        ]
+        return render_template('admin/class_access.html', classes=classes)
     finally:
         d.close()
 

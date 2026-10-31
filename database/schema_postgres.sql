@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS site_settings(id BIGSERIAL PRIMARY KEY,site_name TEXT,tagline TEXT,purpose TEXT,about TEXT,hero_title TEXT,hero_subtitle TEXT,logo_url TEXT,hero_image_url TEXT,background_url TEXT,facebook_url TEXT);
-CREATE TABLE IF NOT EXISTS classes(id BIGSERIAL PRIMARY KEY,name TEXT NOT NULL,display_order INTEGER DEFAULT 0,active BOOLEAN DEFAULT TRUE,stage TEXT);
+CREATE TABLE IF NOT EXISTS classes(id BIGSERIAL PRIMARY KEY,name TEXT NOT NULL,display_order INTEGER DEFAULT 0,active BOOLEAN DEFAULT TRUE,stage TEXT,registration_required BOOLEAN NOT NULL DEFAULT TRUE);
 CREATE TABLE IF NOT EXISTS subjects(id BIGSERIAL PRIMARY KEY,name TEXT NOT NULL,icon TEXT DEFAULT '📘',display_order INTEGER DEFAULT 0,active BOOLEAN DEFAULT TRUE);
 CREATE TABLE IF NOT EXISTS chapters(id BIGSERIAL PRIMARY KEY,subject_id BIGINT NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,class_id BIGINT REFERENCES classes(id),title TEXT NOT NULL,description TEXT,display_order INTEGER DEFAULT 0,active BOOLEAN DEFAULT TRUE);
 CREATE TABLE IF NOT EXISTS questions(id BIGSERIAL PRIMARY KEY,subject_id BIGINT REFERENCES subjects(id),chapter_id BIGINT REFERENCES chapters(id),class_id BIGINT REFERENCES classes(id),question_text TEXT NOT NULL,question_type TEXT DEFAULT 'mcq',explanation TEXT,difficulty TEXT DEFAULT 'medium',marks INTEGER DEFAULT 1,active BOOLEAN DEFAULT TRUE);

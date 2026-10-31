@@ -1,0 +1,31 @@
+{% extends 'base.html' %}{% block title %}Class Access — নিবন্ধন নিয়ম{% endblock %}{% block content %}
+<div class="wrap section">
+  <div class="adminhead"><div><h1>🔓 Class Access — নিবন্ধন নিয়ম</h1><p>কোন শ্রেণিতে নিবন্ধন বাধ্যতামূলক হবে তা এখান থেকে ঠিক করুন। সংরক্ষণের সঙ্গে সঙ্গে হোম পেজসহ পুরো সাইটে কার্যকর হবে।</p></div><a class="btn" href="{{url_for('admin')}}">← Dashboard</a></div>
+  <form method="post" class="card" id="accessForm">
+    <div class="notice compact-notice"><b>নিয়ম</b><p>🔒 <b>নিবন্ধন বাধ্যতামূলক</b> = শিক্ষার্থীকে নিবন্ধন করে Admin অনুমোদনের পর লগইন করতে হবে।<br>🔓 <b>নিবন্ধন ছাড়াই খোলা</b> = যে কেউ সরাসরি প্রশ্ন ও কুইজ অনুশীলন করতে পারবে।<br>আগে থেকে নিবন্ধিত শিক্ষার্থীদের অ্যাকাউন্টে কোনো পরিবর্তন হয় না।</p></div>
+    <div class="actions" style="margin:12px 0">
+      <button type="button" class="btn" onclick="setAll(true)">সব শ্রেণিতে বাধ্যতামূলক</button>
+      <button type="button" class="btn" onclick="setAll(false)">সব শ্রেণি নিবন্ধন ছাড়াই খোলা</button>
+    </div>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>শ্রেণি</th><th>স্তর</th><th>নিবন্ধন বাধ্যতামূলক?</th><th>বর্তমান অবস্থা</th></tr></thead>
+      <tbody>
+      {% for c in classes %}
+        <tr>
+          <td><b>{{ c.name }}</b>{% if not c.active %} <span class="muted">(নিষ্ক্রিয়)</span>{% endif %}</td>
+          <td>{{ c.stage or '' }}</td>
+          <td><label style="display:flex;gap:8px;align-items:center;cursor:pointer;margin:0"><input type="checkbox" class="reqbox" name="required" value="{{ c.id }}" {% if c.required %}checked{% endif %} style="width:20px;height:20px;margin:0"> বাধ্যতামূলক</label></td>
+          <td class="state">{% if c.required %}🔒 নিবন্ধন প্রয়োজন{% else %}🔓 নিবন্ধন ছাড়াই খোলা{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    <div class="actions" style="margin-top:14px"><button class="btn primary">সংরক্ষণ করুন</button></div>
+  </form>
+</div>
+<script>
+function sync(b){var td=b.closest('tr').querySelector('.state');td.textContent=b.checked?'🔒 নিবন্ধন প্রয়োজন':'🔓 নিবন্ধন ছাড়াই খোলা';}
+function setAll(v){document.querySelectorAll('.reqbox').forEach(function(b){b.checked=v;sync(b);});}
+document.querySelectorAll('.reqbox').forEach(function(b){b.addEventListener('change',function(){sync(b);});});
+</script>
+{% endblock %}
