@@ -41,9 +41,9 @@ DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
 SQLITE_PATH = os.environ.get('SQLITE_PATH', os.path.join(BASE, 'zara_sara.db'))
 USE_PG = bool(DATABASE_URL)
 BOOL_TRUE = 'TRUE' if USE_PG else '1'
-MAX_QUESTIONS_PER_CLASS = 10000
+MAX_QUESTIONS_PER_CLASS = 1000
 TOTAL_CLASS_COUNT = 12
-MAX_BULK_IMPORT_ROWS = 120000
+MAX_BULK_IMPORT_ROWS = 12000
 BULK_BATCH_TTL_SECONDS = 60 * 60
 QUIZ_DEFAULT_QUESTION_COUNT = 20
 QUIZ_DEFAULT_MAX_QUESTION_COUNT = 50
@@ -135,7 +135,6 @@ def ensure_schema_upgrades(d):
         d.execute('ALTER TABLE chapters ADD COLUMN IF NOT EXISTS class_id BIGINT REFERENCES classes(id)')
         d.execute('ALTER TABLE questions ADD COLUMN IF NOT EXISTS class_id BIGINT REFERENCES classes(id)')
         d.execute('ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT')
-        d.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS registration_status TEXT NOT NULL DEFAULT 'approved'")
         d.execute('ALTER TABLE students ADD COLUMN IF NOT EXISTS phone TEXT')
         d.execute('ALTER TABLE students ADD COLUMN IF NOT EXISTS recovery_pin_hash TEXT')
         d.execute('ALTER TABLE students ADD COLUMN IF NOT EXISTS practice_class_id BIGINT REFERENCES classes(id)')
@@ -154,7 +153,6 @@ def ensure_schema_upgrades(d):
         _add_column_if_missing(d, 'chapters', 'class_id', 'INTEGER REFERENCES classes(id)')
         _add_column_if_missing(d, 'questions', 'class_id', 'INTEGER REFERENCES classes(id)')
         _add_column_if_missing(d, 'students', 'email', 'TEXT')
-        _add_column_if_missing(d, 'students', 'registration_status', "TEXT NOT NULL DEFAULT 'approved'")
         _add_column_if_missing(d, 'students', 'phone', 'TEXT')
         _add_column_if_missing(d, 'students', 'recovery_pin_hash', 'TEXT')
         _add_column_if_missing(d, 'students', 'practice_class_id', 'INTEGER REFERENCES classes(id)')
@@ -173,7 +171,6 @@ def ensure_schema_upgrades(d):
     d.execute('CREATE INDEX IF NOT EXISTS idx_quizzes_class_subject_chapter ON quizzes(class_id, subject_id, chapter_id)')
     d.execute('CREATE INDEX IF NOT EXISTS idx_quiz_questions_question ON quiz_questions(question_id)')
     d.execute('CREATE INDEX IF NOT EXISTS idx_students_practice_class ON students(practice_class_id)')
-    d.execute('CREATE INDEX IF NOT EXISTS idx_students_registration_status ON students(registration_status)')
     d.execute('CREATE INDEX IF NOT EXISTS idx_classes_order ON classes(display_order,active)')
     if d.pg:
         d.execute('CREATE TABLE IF NOT EXISTS quiz_attempt_questions(attempt_id BIGINT NOT NULL REFERENCES quiz_attempts(id) ON DELETE CASCADE,question_id BIGINT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,display_order INTEGER NOT NULL,PRIMARY KEY(attempt_id,display_order))')
@@ -297,117 +294,6 @@ def init_db():
                         (qid, option_text, i == ans, i),
                     )
 
-        # Add a small, editable starter bank for Classes 1–4 only when a class has no
-        # class-specific questions. Never overwrite or duplicate an existing bank.
-        beginner_samples = {
-            1: [
-                ('বাংলা','বাংলা বর্ণমালা','বাংলা বর্ণমালার প্রথম স্বরবর্ণ কোনটি?',['অ','আ','ই','উ'],0,'বাংলা স্বরবর্ণের শুরুতে অ আসে.'),
-                ('বাংলা','বাংলা বর্ণমালা','“আম” শব্দের প্রথম বর্ণ কোনটি?',['আ','ম','অ','ই'],0,'আম শব্দটি আ দিয়ে শুরু.'),
-                ('বাংলা','শব্দ চিনি','কোনটি একটি ফল?',['আম','বই','কলম','চেয়ার'],0,'আম একটি ফল.'),
-                ('ইংরেজি','English Basics','Which letter comes after A?',['B','C','D','E'],0,'The alphabet goes A, B, C.'),
-                ('ইংরেজি','English Basics','Which one is a vowel?',['A','B','C','D'],0,'A is a vowel.'),
-                ('ইংরেজি','English Words','Which word names an animal?',['Cat','Pen','Sun','Bag'],0,'Cat is an animal.'),
-                ('গণিত','সংখ্যা চিনি','২ + ৩ = কত?',['৫','৪','৬','৭'],0,'২-এর সঙ্গে ৩ যোগ করলে ৫ হয়.'),
-                ('গণিত','সংখ্যা চিনি','১০-এর ঠিক আগের সংখ্যা কোনটি?',['৯','৮','১১','১২'],0,'১০-এর ঠিক আগে ৯.'),
-                ('গণিত','আকার চিনি','কোন আকারটির তিনটি বাহু?',['ত্রিভুজ','বর্গ','বৃত্ত','আয়তক্ষেত্র'],0,'ত্রিভুজের তিনটি বাহু থাকে.'),
-                ('বিজ্ঞান','আমাদের চারপাশ','গাছের কোন অংশ মাটি থেকে পানি নেয়?',['শিকড়','ফুল','ফল','পাতা'],0,'শিকড় মাটি থেকে পানি ও খনিজ নেয়.'),
-                ('বিজ্ঞান','আমাদের চারপাশ','দিনের বেলায় আলো দেয় কোনটি?',['সূর্য','চাঁদ','তারা','মেঘ'],0,'সূর্য পৃথিবীকে আলো দেয়.'),
-                ('বিজ্ঞান','আমাদের শরীর','আমরা কোন অঙ্গ দিয়ে দেখি?',['চোখ','কান','নাক','হাত'],0,'চোখ দিয়ে আমরা দেখি.'),
-                ('সাধারণ জ্ঞান','বাংলাদেশ পরিচিতি','বাংলাদেশের জাতীয় ফুল কোনটি?',['শাপলা','গোলাপ','জবা','সূর্যমুখী'],0,'বাংলাদেশের জাতীয় ফুল শাপলা.'),
-                ('সাধারণ জ্ঞান','বাংলাদেশ পরিচিতি','বাংলাদেশের রাজধানী কোনটি?',['ঢাকা','খুলনা','রাজশাহী','সিলেট'],0,'বাংলাদেশের রাজধানী ঢাকা.'),
-                ('সাধারণ জ্ঞান','দৈনন্দিন জ্ঞান','সপ্তাহে কয় দিন?',['৭','৫','৬','৮'],0,'এক সপ্তাহে সাত দিন.'),
-            ],
-            2: [
-                ('বাংলা','শব্দ ও বাক্য','“পাখি” শব্দটি কী বোঝায়?',['একটি প্রাণী','একটি ফল','একটি রং','একটি সংখ্যা'],0,'পাখি একটি প্রাণী.'),
-                ('বাংলা','শব্দ ও বাক্য','“দিন” শব্দের বিপরীত কোনটি?',['রাত','সকাল','আলো','সূর্য'],0,'দিনের বিপরীত রাত.'),
-                ('বাংলা','শব্দ ও বাক্য','কোন বাক্যটির শেষে প্রশ্নবোধক চিহ্ন হবে?',['তোমার নাম কী','আমি স্কুলে যাই','এটি আমার বই','আজ রোদ উঠেছে'],0,'প্রশ্নের শেষে প্রশ্নবোধক চিহ্ন বসে.'),
-                ('ইংরেজি','English Basics','What is the plural of “book”?',['Books','Bookes','Bookies','Book'],0,'Usually, add s to make the plural.'),
-                ('ইংরেজি','English Basics','Choose the opposite of “hot”.',['Cold','Tall','Fast','Big'],0,'Cold is the opposite of hot.'),
-                ('ইংরেজি','English Words','Which word is a colour?',['Blue','Chair','Apple','Run'],0,'Blue is a colour.'),
-                ('গণিত','যোগ-বিয়োগ','১৫ − ৭ = কত?',['৮','৭','৯','৬'],0,'১৫ থেকে ৭ বাদ দিলে ৮.'),
-                ('গণিত','যোগ-বিয়োগ','৪ × ৩ = কত?',['১২','৭','১৪','১০'],0,'৪ তিনবার যোগ করলে ১২.'),
-                ('গণিত','সংখ্যা চিনি','কোন সংখ্যাটি সবচেয়ে বড়?',['৪২','২৪','৩৪','১৪'],0,'৪২-এর দশকের অঙ্ক ৪, তাই এটি সবচেয়ে বড়.'),
-                ('বিজ্ঞান','প্রকৃতি','মানুষ শ্বাস নেওয়ার সময় কোন গ্যাস গ্রহণ করে?',['অক্সিজেন','কার্বন ডাই-অক্সাইড','হিলিয়াম','হাইড্রোজেন'],0,'মানুষ শ্বাসের জন্য অক্সিজেন গ্রহণ করে.'),
-                ('বিজ্ঞান','প্রকৃতি','গাছ সাধারণত কোন অংশ দিয়ে খাবার তৈরি করে?',['পাতা','শিকড়','ফুল','ফল'],0,'পাতায় সূর্যের আলো ব্যবহার করে খাদ্য তৈরি হয়.'),
-                ('বিজ্ঞান','আমাদের শরীর','শব্দ শুনতে কোন অঙ্গ লাগে?',['কান','চোখ','জিহ্বা','হাত'],0,'কান দিয়ে আমরা শব্দ শুনি.'),
-                ('সাধারণ জ্ঞান','বাংলাদেশ পরিচিতি','বাংলাদেশের জাতীয় ফল কোনটি?',['কাঁঠাল','আম','লিচু','কলা'],0,'বাংলাদেশের জাতীয় ফল কাঁঠাল.'),
-                ('সাধারণ জ্ঞান','দৈনন্দিন জ্ঞান','এক দিনে কয় ঘণ্টা?',['২৪','১২','৩০','৬০'],0,'এক দিনে ২৪ ঘণ্টা.'),
-                ('সাধারণ জ্ঞান','দৈনন্দিন জ্ঞান','ট্রাফিক সিগন্যালে লাল বাতি কী বোঝায়?',['থামো','চলো','দৌড়াও','ঘুরে যাও'],0,'লাল বাতি থামার নির্দেশ দেয়.'),
-            ],
-            3: [
-                ('বাংলা','ভাষা চর্চা','“সুখ” শব্দের বিপরীত কোনটি?',['দুঃখ','আনন্দ','হাসি','খুশি'],0,'সুখের বিপরীত দুঃখ.'),
-                ('বাংলা','ভাষা চর্চা','কোনটি একটি বিশেষ্য?',['নদী','দৌড়ায়','সুন্দর','ধীরে'],0,'নদী একটি নামবাচক শব্দ বা বিশেষ্য.'),
-                ('বাংলা','ভাষা চর্চা','শুদ্ধ বানান কোনটি?',['পৃথিবী','পিথিবী','পৃথিবি','প্রিথিবী'],0,'শুদ্ধ বানান পৃথিবী.'),
-                ('ইংরেজি','English Grammar','Choose the past form of “go”.',['Went','Goed','Going','Goes'],0,'The past form of go is went.'),
-                ('ইংরেজি','English Grammar','Choose the correct article: ___ apple.',['An','A','Thee','Am'],0,'Apple begins with a vowel sound, so use an.'),
-                ('ইংরেজি','English Words','What is the opposite of “early”?',['Late','Quick','Small','Open'],0,'Late is the opposite of early.'),
-                ('গণিত','গুণ ও ভাগ','৭ × ৬ = কত?',['৪২','৩৬','৪৮','৪০'],0,'৭ গুণ ৬ সমান ৪২.'),
-                ('গণিত','গুণ ও ভাগ','৩৬ ÷ ৪ = কত?',['৯','৮','৬','১২'],0,'৩৬ কে ৪ দিয়ে ভাগ করলে ৯.'),
-                ('গণিত','ভগ্নাংশ','একটি পিজ্জার ৪ সমান ভাগের ১ ভাগ হলো কোন ভগ্নাংশ?',['১/৪','১/২','৩/৪','৪/১'],0,'চার সমান ভাগের এক ভাগ হলো এক-চতুর্থাংশ.'),
-                ('বিজ্ঞান','প্রকৃতি ও পদার্থ','পানি বরফ হলে কী ঘটে?',['জমে কঠিন হয়','গ্যাস হয়','আগুন হয়','অদৃশ্য হয়'],0,'ঠান্ডায় পানি জমে কঠিন বরফ হয়.'),
-                ('বিজ্ঞান','প্রকৃতি ও পদার্থ','পৃথিবী কোন নক্ষত্রকে কেন্দ্র করে ঘোরে?',['সূর্য','চাঁদ','মঙ্গল','শুক্র'],0,'পৃথিবী সূর্যকে কেন্দ্র করে ঘোরে.'),
-                ('বিজ্ঞান','প্রকৃতি ও পদার্থ','কোনটি জীবিত?',['গাছ','পাথর','কাচ','লোহা'],0,'গাছ বেড়ে ওঠে এবং জীবনের বৈশিষ্ট্য দেখায়.'),
-                ('সাধারণ জ্ঞান','বাংলাদেশ ও বিশ্ব','বাংলাদেশের জাতীয় স্মৃতিসৌধ কোথায়?',['সাভার','কক্সবাজার','রংপুর','বরিশাল'],0,'জাতীয় স্মৃতিসৌধ সাভারে অবস্থিত.'),
-                ('সাধারণ জ্ঞান','বাংলাদেশ ও বিশ্ব','পৃথিবীর প্রাকৃতিক উপগ্রহ কোনটি?',['চাঁদ','সূর্য','মঙ্গল','শুক্র'],0,'চাঁদ পৃথিবীর প্রাকৃতিক উপগ্রহ.'),
-                ('সাধারণ জ্ঞান','বাংলাদেশ ও বিশ্ব','বাংলাদেশের স্বাধীনতা দিবস কবে?',['২৬ মার্চ','১৬ ডিসেম্বর','২১ ফেব্রুয়ারি','১৪ এপ্রিল'],0,'বাংলাদেশের স্বাধীনতা দিবস ২৬ মার্চ.'),
-            ],
-            4: [
-                ('বাংলা','ব্যাকরণ ও শব্দ','“বিদ্যালয়” শব্দের কাছাকাছি অর্থ কোনটি?',['স্কুল','বাজার','হাসপাতাল','খেলার মাঠ'],0,'বিদ্যালয় অর্থ স্কুল.'),
-                ('বাংলা','ব্যাকরণ ও শব্দ','“সততা” কোন ধরনের গুণ?',['ভালো গুণ','একটি রং','একটি ফল','একটি সংখ্যা'],0,'সততা মানুষের একটি ভালো গুণ.'),
-                ('বাংলা','ব্যাকরণ ও শব্দ','শুদ্ধ বানান কোনটি?',['স্বাধীনতা','সাধিনতা','স্বাধিনতা','সাধীনতা'],0,'শুদ্ধ বানান স্বাধীনতা.'),
-                ('ইংরেজি','English Grammar','Choose the correct sentence.',['She goes to school.','She go to school.','She going school.','She gone to school.'],0,'With she/he/it in the simple present, use goes.'),
-                ('ইংরেজি','English Grammar','What is the comparative form of “tall”?',['Taller','Tallest','More tall','Tallly'],0,'The comparative form is taller.'),
-                ('ইংরেজি','English Words','Which word is a verb?',['Write','Blue','Pencil','Happy'],0,'Write is an action word (verb).'),
-                ('গণিত','গণিত চর্চা','১২৫ + ২৭৫ = কত?',['৪০০','৩৯০','৪১০','৩০০'],0,'১২৫ যোগ ২৭৫ সমান ৪০০.'),
-                ('গণিত','গণিত চর্চা','৮ × ৯ = কত?',['৭২','৬৪','৮১','৬৯'],0,'৮ গুণ ৯ সমান ৭২.'),
-                ('গণিত','ভগ্নাংশ ও পরিমাপ','১ মিটারে কত সেন্টিমিটার?',['১০০','১০','১০০০','৫০'],0,'১ মিটার = ১০০ সেন্টিমিটার.'),
-                ('বিজ্ঞান','বিজ্ঞান পরিচিতি','পানি ফুটলে সাধারণত কীতে পরিণত হয়?',['জলীয় বাষ্প','বরফ','মাটি','ধাতু'],0,'ফুটন্ত পানি জলীয় বাষ্পে পরিণত হয়.'),
-                ('বিজ্ঞান','বিজ্ঞান পরিচিতি','খাদ্য হজমে কোন অঙ্গ গুরুত্বপূর্ণ ভূমিকা রাখে?',['পাকস্থলী','কান','চোখ','হাঁটু'],0,'পাকস্থলী খাদ্য হজমে সাহায্য করে.'),
-                ('বিজ্ঞান','বিজ্ঞান পরিচিতি','কোনটি শক্তির একটি উৎস?',['সূর্য','বালি','কাচ','কাগজ'],0,'সূর্য আলো ও তাপশক্তির উৎস.'),
-                ('সাধারণ জ্ঞান','বাংলাদেশ ও বিশ্ব','বাংলাদেশের বিজয় দিবস কবে?',['১৬ ডিসেম্বর','২৬ মার্চ','২১ ফেব্রুয়ারি','১ মে'],0,'বাংলাদেশের বিজয় দিবস ১৬ ডিসেম্বর.'),
-                ('সাধারণ জ্ঞান','বাংলাদেশ ও বিশ্ব','বিশ্ব পরিবেশ দিবস পালিত হয় কোন তারিখে?',['৫ জুন','২১ ফেব্রুয়ারি','১ জানুয়ারি','১৬ ডিসেম্বর'],0,'বিশ্ব পরিবেশ দিবস ৫ জুন.'),
-                ('সাধারণ জ্ঞান','বাংলাদেশ ও বিশ্ব','পৃথিবীর সবচেয়ে বড় মহাসাগর কোনটি?',['প্রশান্ত মহাসাগর','আটলান্টিক মহাসাগর','ভারত মহাসাগর','উত্তর মহাসাগর'],0,'প্রশান্ত মহাসাগর পৃথিবীর বৃহত্তম মহাসাগর.'),
-            ],
-        }
-        for class_no, starter_rows in beginner_samples.items():
-            class_row = d.fetchone('SELECT id FROM classes WHERE lower(name)=lower(?) LIMIT 1', (f'শ্রেণি {class_no}',))
-            if not class_row:
-                continue
-            class_id = int(class_row['id'])
-            # If even one class-specific question exists, preserve the school's own bank.
-            if d.fetchone('SELECT id FROM questions WHERE class_id=? LIMIT 1', (class_id,)):
-                continue
-            created_question_ids = []
-            for subject_name, chapter_title, q_text, opts, correct_idx, explanation in starter_rows:
-                subject_row = d.fetchone('SELECT id FROM subjects WHERE name=? LIMIT 1', (subject_name,))
-                if not subject_row:
-                    continue
-                subject_id = int(subject_row['id'])
-                chapter_row = d.fetchone('SELECT id FROM chapters WHERE subject_id=? AND class_id=? AND title=? LIMIT 1', (subject_id, class_id, chapter_title))
-                chapter_id = int(chapter_row['id']) if chapter_row else d.insert_id(
-                    'INSERT INTO chapters(subject_id,class_id,title) VALUES(?,?,?)',
-                    (subject_id, class_id, chapter_title),
-                )
-                question_id = d.insert_id(
-                    '''INSERT INTO questions(subject_id,chapter_id,class_id,question_text,question_type,explanation,difficulty,marks,active)
-                       VALUES(?,?,?,?,?,?,?,?,?)''',
-                    (subject_id, chapter_id, class_id, q_text, 'mcq', explanation, 'easy', 1, True),
-                )
-                created_question_ids.append(question_id)
-                for option_no, option_text in enumerate(opts):
-                    d.execute(
-                        'INSERT INTO question_options(question_id,option_text,is_correct,display_order) VALUES(?,?,?,?)',
-                        (question_id, option_text, option_no == correct_idx, option_no),
-                    )
-            if created_question_ids and not d.fetchone(f'SELECT id FROM quizzes WHERE class_id=? AND published={BOOL_TRUE} LIMIT 1', (class_id,)):
-                quiz_id = d.insert_id(
-                    '''INSERT INTO quizzes(title,description,class_id,subject_id,chapter_id,time_limit,total_marks,published,question_count,max_question_count,student_can_choose_count,randomize_questions)
-                       VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''',
-                    (f'শ্রেণি {class_no} প্রাথমিক অনুশীলন', f'শ্রেণি {class_no}-এর জন্য বাংলা, ইংরেজি, গণিত, বিজ্ঞান ও সাধারণ জ্ঞানের প্রাথমিক প্রশ্ন।', class_id, None, None, 0, len(created_question_ids), True, len(created_question_ids), len(created_question_ids), False, True),
-                )
-                for order_no, question_id in enumerate(created_question_ids, 1):
-                    d.execute('INSERT INTO quiz_questions(quiz_id,question_id,display_order) VALUES(?,?,?)', (quiz_id, question_id, order_no))
-
         if not d.fetchone('SELECT COUNT(*) AS n FROM badges')['n']:
             default_badges = [
                 ('Starter', '🌱', 'প্রথম ১০০ XP অর্জন করলে পাওয়া যাবে।', 100, 1),
@@ -427,17 +313,11 @@ def init_db():
         d.execute('UPDATE quizzes SET student_can_choose_count=? WHERE student_can_choose_count IS NULL', (False,))
 
         starter_games = [
-            ('দ্রুত গণিত','quick-math','সময় ধরে দ্রুত অঙ্ক সমাধান করো—লেভেল বাড়লে অঙ্ক আরও কঠিন হবে.','builtin',1,{'icon':'➗','kind':'quick_math'}),
-            ('সংখ্যা রহস্য','number-pattern','ধারার পরের সংখ্যা বের করো—লেভেল ১–৫০.','builtin',2,{'icon':'🔢','kind':'number_pattern'}),
+            ('দ্রুত গণিত','quick-math','সময় ধরে দ্রুত অঙ্ক সমাধান করো।','builtin',1,{'icon':'➗','kind':'quick_math'}),
+            ('সংখ্যা রহস্য','number-pattern','ধারার পরের সংখ্যা বের করো—সহজ থেকে কঠিন।','builtin',2,{'icon':'🔢','kind':'number_pattern'}),
             ('স্মৃতি মিল','memory-match','মনোযোগ ও স্মৃতিশক্তির মজার অনুশীলন।','builtin',3,{'icon':'🧠','kind':'memory_match'}),
             ('শব্দ সাজাও','word-scramble','ইংরেজি শব্দের অক্ষর ঠিকভাবে সাজাও।','builtin',4,{'icon':'🔤','kind':'word_scramble'}),
             ('দ্রুত সাধারণ জ্ঞান','quick-gk','স্কুল শিক্ষার্থীদের জন্য দ্রুত GK challenge।','builtin',5,{'icon':'🌍','kind':'quick_gk'}),
-            ('ভিন্নটি খুঁজে নাও','odd-one-out','দল থেকে আলাদা শব্দ বা সংখ্যাটি খুঁজে বের করো।','builtin',6,{'icon':'🔎','kind':'odd_one_out'}),
-            ('যুক্তির ধাঁধা','logic-puzzle','ধাপে ধাপে যুক্তি, হিসাব ও বুদ্ধির চ্যালেঞ্জ।','builtin',7,{'icon':'🧩','kind':'logic_puzzle'}),
-            ('বাংলা শব্দচর্চা','bangla-vocab','বাংলা শব্দ, অর্থ ও বানানের অনুশীলন।','builtin',8,{'icon':'📖','kind':'bangla_vocab'}),
-            ('সংখ্যা অনুমান','number-guess','সংকেত দেখে গোপন সংখ্যা অনুমান করো।','builtin',9,{'icon':'🎯','kind':'number_guess'}),
-            ('দেশ-দুনিয়া চ্যালেঞ্জ','world-challenge','বাংলাদেশ, প্রকৃতি ও পৃথিবী নিয়ে প্রশ্নোত্তর।','builtin',10,{'icon':'🌏','kind':'world_challenge'}),
-            ('সঠিক বানান','spelling-challenge','শব্দের সঠিক বানান বেছে নাও।','builtin',11,{'icon':'✍️','kind':'spelling_challenge'}),
         ]
         for title,slug,descr,gtype,order_no,config in starter_games:
             if not d.fetchone('SELECT id FROM games WHERE slug=? LIMIT 1',(slug,)):
@@ -609,19 +489,11 @@ def explore():
     return app.send_static_file('explore/index.html')
 
 
-def _class_number_from_name(class_name):
-    match = re.search(r'(\d+)', str(class_name or ''))
-    return int(match.group(1)) if match else 0
-
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     d = db()
     try:
-        all_classes = d.fetchall(f'SELECT * FROM classes WHERE active={BOOL_TRUE} ORDER BY display_order')
-        # Self-registration is only available for Classes 5–12.
-        classes = [c for c in all_classes if 5 <= _class_number_from_name(c['name']) <= TOTAL_CLASS_COUNT]
-        selected_class_id = request.form.get('class_id', '') if request.method == 'POST' else request.args.get('class_id', '')
+        classes = d.fetchall(f'SELECT * FROM classes WHERE active={BOOL_TRUE} ORDER BY display_order')
         if request.method == 'POST':
             display_name = request.form.get('display_name', '').strip()
             class_id = request.form.get('class_id') or ''
@@ -630,13 +502,10 @@ def register():
             password = request.form.get('password', '')
             confirm = request.form.get('confirm_password', '')
             recovery_pin = request.form.get('recovery_pin', '').strip()
-            selected_class = d.fetchone(f'SELECT id,name FROM classes WHERE id=? AND active={BOOL_TRUE}', (int(class_id),)) if class_id.isdigit() else None
             if not display_name or not class_id.isdigit() or not phone:
                 flash('নাম, Class এবং মোবাইল নম্বর অবশ্যই দিতে হবে।', 'error')
-            elif not selected_class:
+            elif not d.fetchone(f'SELECT 1 AS ok FROM classes WHERE id=? AND active={BOOL_TRUE}', (int(class_id),)):
                 flash('সঠিক Class নির্বাচন করুন।', 'error')
-            elif not (5 <= _class_number_from_name(selected_class['name']) <= TOTAL_CLASS_COUNT):
-                flash('শ্রেণি ১–৪-এ নিবন্ধন লাগে না—হোম পেজ থেকে শ্রেণি বেছে অনুশীলন করো।', 'error')
             elif len(password) < 6:
                 flash('Password কমপক্ষে ৬ অক্ষরের হতে হবে।', 'error')
             elif password != confirm:
@@ -646,13 +515,13 @@ def register():
             else:
                 username = generate_student_id(d)
                 d.execute(
-                    '''INSERT INTO students(username,password_hash,display_name,class_id,practice_class_id,email,phone,recovery_pin_hash,registration_status,created_at,updated_at)
-                       VALUES(?,?,?,?,?,?,?,?,?,?,?)''',
-                    (username, generate_password_hash(password), display_name, int(class_id), int(class_id), email or None, phone, generate_password_hash(recovery_pin), 'pending', datetime.utcnow().isoformat(), datetime.utcnow().isoformat()),
+                    '''INSERT INTO students(username,password_hash,display_name,class_id,practice_class_id,email,phone,recovery_pin_hash,created_at,updated_at)
+                       VALUES(?,?,?,?,?,?,?,?,?,?)''',
+                    (username, generate_password_hash(password), display_name, int(class_id), int(class_id), email or None, phone, generate_password_hash(recovery_pin), datetime.utcnow().isoformat(), datetime.utcnow().isoformat()),
                 )
                 d.commit()
                 return render_template('registration_success.html', student_id=username, display_name=display_name)
-        return render_template('register.html', classes=classes, selected_class_id=selected_class_id)
+        return render_template('register.html', classes=classes)
     finally:
         d.close()
 
@@ -704,115 +573,6 @@ def forgot_password():
     return render_template('forgot_password.html', reset_done=reset_done)
 
 
-@app.route('/practice/class/<int:class_no>')
-def guest_practice(class_no):
-    """No-registration practice for Classes 1–4 only."""
-    if class_no < 1 or class_no > 4:
-        flash('শ্রেণি ৫–১২-এর অনুশীলনের জন্য নিবন্ধন ও Admin অনুমোদন প্রয়োজন।', 'error')
-        return redirect(url_for('register'))
-    d = db()
-    try:
-        class_row = d.fetchone(f"SELECT * FROM classes WHERE lower(name)=lower(?) AND active={BOOL_TRUE} LIMIT 1", (f'শ্রেণি {class_no}',))
-        if not class_row:
-            flash('এই শ্রেণিটি এখন পাওয়া যাচ্ছে না।', 'error')
-            return redirect(url_for('home'))
-        subject_id = request.args.get('subject_id', '').strip()
-        chapter_id = request.args.get('chapter_id', '').strip()
-        subjects = d.fetchall(f'SELECT * FROM subjects WHERE active={BOOL_TRUE} ORDER BY display_order,name')
-        chapters = d.fetchall(f'''SELECT * FROM chapters WHERE active={BOOL_TRUE} AND (class_id=? OR class_id IS NULL)
-                                  {"AND subject_id=?" if subject_id.isdigit() else ""}
-                                  ORDER BY subject_id,display_order,title''',
-                               (class_row['id'], int(subject_id)) if subject_id.isdigit() else (class_row['id'],))
-        where = [f'q.active={BOOL_TRUE}', '(q.class_id=? OR q.class_id IS NULL)']
-        params = [class_row['id']]
-        if subject_id.isdigit():
-            where.append('q.subject_id=?'); params.append(int(subject_id))
-        if chapter_id.isdigit():
-            where.append('q.chapter_id=?'); params.append(int(chapter_id))
-        questions = d.fetchall(f'''SELECT q.*,s.name subject_name,ch.title chapter_title
-                                   FROM questions q LEFT JOIN subjects s ON s.id=q.subject_id
-                                   LEFT JOIN chapters ch ON ch.id=q.chapter_id
-                                   WHERE {' AND '.join(where)} ORDER BY q.subject_id,ch.display_order,q.id LIMIT 60''', tuple(params))
-        options = {int(q['id']): d.fetchall('SELECT * FROM question_options WHERE question_id=? ORDER BY display_order,id', (q['id'],)) for q in questions}
-        correct_answers = {int(q['id']): next((o['option_text'] for o in options[int(q['id'])] if o['is_correct']), '') for q in questions}
-        quiz_rows = d.fetchall(f'''SELECT q.*,sub.name subject_name,ch.title chapter_name,
-                                    (SELECT COUNT(*) FROM quiz_questions qq WHERE qq.quiz_id=q.id) AS question_pool_count
-                                    FROM quizzes q LEFT JOIN subjects sub ON sub.id=q.subject_id
-                                    LEFT JOIN chapters ch ON ch.id=q.chapter_id
-                                    WHERE q.published={BOOL_TRUE} AND (q.class_id=? OR q.class_id IS NULL)
-                                    ORDER BY q.id DESC LIMIT 30''', (class_row['id'],))
-        return render_template('guest_practice.html', class_row=class_row, class_no=class_no, subjects=subjects,
-                               chapters=chapters, questions=questions, options=options, correct_answers=correct_answers, quizzes=quiz_rows,
-                               selected_subject=subject_id, selected_chapter=chapter_id)
-    finally:
-        d.close()
-
-
-@app.route('/class/<int:class_no>')
-def class_entry(class_no):
-    """Home-page class selector: public practice for 1–4; approved login for 5–12."""
-    if class_no < 1 or class_no > TOTAL_CLASS_COUNT:
-        flash('সঠিক শ্রেণি নির্বাচন করুন।', 'error')
-        return redirect(url_for('home'))
-    d = db()
-    try:
-        class_row = d.fetchone(f"SELECT * FROM classes WHERE lower(name)=lower(?) AND active={BOOL_TRUE} LIMIT 1", (f'শ্রেণি {class_no}',))
-        if not class_row:
-            flash('এই শ্রেণিটি এখন পাওয়া যাচ্ছে না।', 'error')
-            return redirect(url_for('home'))
-        if not session.get('student_id'):
-            if class_no <= 4:
-                return redirect(url_for('guest_practice', class_no=class_no))
-            return redirect(url_for('register', class_id=class_row['id']))
-        student_row = d.fetchone('SELECT id,active,registration_status FROM students WHERE id=?', (session['student_id'],))
-        if not student_row or not student_row['active'] or (student_row['registration_status'] or 'approved').lower() != 'approved':
-            session.clear()
-            if class_no <= 4:
-                return redirect(url_for('guest_practice', class_no=class_no))
-            return redirect(url_for('register', class_id=class_row['id']))
-        d.execute('UPDATE students SET practice_class_id=?,updated_at=? WHERE id=?', (class_row['id'], datetime.utcnow().isoformat(), student_row['id']))
-        d.commit()
-        flash(f"এখন {class_row['name']} বেছে নেওয়া হয়েছে।", 'ok')
-        return redirect(url_for('student'))
-    finally:
-        d.close()
-
-
-@app.route('/practice/class/<int:class_no>/quiz/<int:qid>', methods=['GET', 'POST'])
-def guest_practice_quiz(class_no, qid):
-    if class_no < 1 or class_no > 4:
-        flash('শ্রেণি ৫–১২-এর অনুশীলনের জন্য নিবন্ধন ও Admin অনুমোদন প্রয়োজন।', 'error')
-        return redirect(url_for('register'))
-    d = db()
-    try:
-        class_row = d.fetchone(f"SELECT * FROM classes WHERE lower(name)=lower(?) AND active={BOOL_TRUE} LIMIT 1", (f'শ্রেণি {class_no}',))
-        quiz_row = d.fetchone(f'''SELECT q.*,c.name class_name,sub.name subject_name,ch.title chapter_name
-                                  FROM quizzes q LEFT JOIN classes c ON c.id=q.class_id
-                                  LEFT JOIN subjects sub ON sub.id=q.subject_id LEFT JOIN chapters ch ON ch.id=q.chapter_id
-                                  WHERE q.id=? AND q.published={BOOL_TRUE}''', (qid,))
-        if not class_row or not quiz_row or (quiz_row['class_id'] is not None and quiz_row['class_id'] != class_row['id']):
-            flash('এই অনুশীলনীটি নির্বাচিত শ্রেণির জন্য পাওয়া যায়নি।', 'error')
-            return redirect(url_for('guest_practice', class_no=class_no))
-        pool = _quiz_pool(d, qid)
-        if request.method == 'POST':
-            results=[]; score=0
-            for number, q in enumerate(pool, 1):
-                opts=d.fetchall('SELECT * FROM question_options WHERE question_id=? ORDER BY display_order,id', (q['id'],))
-                correct=next((o['option_text'] for o in opts if o['is_correct']), '')
-                chosen=request.form.get(f"q{q['id']}", '')
-                is_correct=bool(correct and chosen==correct)
-                score += int(is_correct)
-                results.append({'number':number,'question':q,'options':opts,'selected':chosen,'correct':correct,'is_correct':is_correct})
-            return render_template('guest_quiz.html', class_no=class_no, quiz=quiz_row, questions=pool,
-                                   options={int(q['id']): d.fetchall('SELECT * FROM question_options WHERE question_id=? ORDER BY display_order,id', (q['id'],)) for q in pool},
-                                   results=results, score=score, total=len(pool), submitted=True)
-        return render_template('guest_quiz.html', class_no=class_no, quiz=quiz_row, questions=pool,
-                               options={int(q['id']): d.fetchall('SELECT * FROM question_options WHERE question_id=? ORDER BY display_order,id', (q['id'],)) for q in pool},
-                               results=[], score=None, total=len(pool), submitted=False)
-    finally:
-        d.close()
-
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -825,17 +585,10 @@ def login():
         finally:
             d.close()
         if s and check_password_hash(s['password_hash'], request.form.get('password', '')):
-            registration_status = (s['registration_status'] or 'approved').lower()
-            if registration_status == 'pending':
-                flash('আপনার নিবন্ধন পাওয়া গেছে। Admin অনুমোদন দিলে লগইন করতে পারবেন।', 'error')
-            elif registration_status != 'approved':
-                flash('এই নিবন্ধনটি অনুমোদিত নয়। প্রয়োজনে Admin-এর সঙ্গে যোগাযোগ করুন।', 'error')
-            else:
-                session.clear()
-                session['student_id'] = s['id']
-                return redirect(url_for('student'))
-        else:
-            flash('ইউজারনেম বা পাসওয়ার্ড সঠিক নয়।', 'error')
+            session.clear()
+            session['student_id'] = s['id']
+            return redirect(url_for('student'))
+        flash('ইউজারনেম বা পাসওয়ার্ড সঠিক নয়।', 'error')
     return render_template('login.html')
 
 
@@ -885,7 +638,7 @@ def student():
                        ORDER BY subject_id,display_order,title''',
                     (practice_class_id,),
                 )
-        q_where = [f'q.active={BOOL_TRUE} AND (q.class_id IS NULL OR q.class_id=?)']
+        q_where = [f'q.published={BOOL_TRUE} AND (q.class_id IS NULL OR q.class_id=?)']
         q_params = [practice_class_id]
         if subject_id and subject_id.isdigit():
             q_where.append('q.subject_id=?'); q_params.append(int(subject_id))
@@ -1126,7 +879,6 @@ def admin():
     try:
         tables = ['students','questions','quizzes','notices','chapters','badges','games','media_assets']
         counts = {t: d.fetchone(f'SELECT COUNT(*) AS n FROM {t}')['n'] for t in tables}
-        counts['pending_approvals'] = d.fetchone("SELECT COUNT(*) AS n FROM students WHERE registration_status='pending'")['n']
         settings = d.fetchone('SELECT * FROM site_settings LIMIT 1')
         recent_quizzes = d.fetchall(
             '''SELECT q.id,q.title,q.published,q.time_limit,c.name class_name,s.name subject_name,ch.title chapter_name,
@@ -1199,51 +951,12 @@ def admin_students():
         if filter_class.isdigit(): where.append('s.class_id=?'); params.append(int(filter_class))
         if filter_status=='active': where.append(f's.active={BOOL_TRUE}')
         elif filter_status=='inactive': where.append(f's.active<>{BOOL_TRUE}')
-        elif filter_status in ('pending','approved','rejected'):
-            where.append('s.registration_status=?'); params.append(filter_status)
         where_sql=('WHERE '+' AND '.join(where)) if where else ''
         students=d.fetchall(f'SELECT s.*,c.name class_name,pc.name practice_class_name FROM students s LEFT JOIN classes c ON c.id=s.class_id LEFT JOIN classes pc ON pc.id=s.practice_class_id {where_sql} ORDER BY s.id DESC LIMIT 500',tuple(params))
         classes=d.fetchall('SELECT * FROM classes ORDER BY display_order')
         return render_template('admin/students.html',students=students,classes=classes,search=search,filter_class=filter_class,filter_status=filter_status)
     finally:
         d.close()
-
-
-@app.route('/admin/students/<int:sid>/approve', methods=['POST'])
-@admin_required
-def admin_student_approve(sid):
-    d = db()
-    try:
-        student_row = d.fetchone('SELECT id,display_name,registration_status FROM students WHERE id=?', (sid,))
-        if not student_row:
-            flash('শিক্ষার্থী পাওয়া যায়নি।', 'error')
-        else:
-            d.execute("UPDATE students SET registration_status='approved',updated_at=? WHERE id=?", (datetime.utcnow().isoformat(), sid))
-            d.commit()
-            flash(f"{student_row['display_name'] or 'শিক্ষার্থী'}-এর নিবন্ধন অনুমোদন করা হয়েছে।", 'ok')
-    except Exception:
-        d.rollback(); flash('অনুমোদন করা যায়নি। আবার চেষ্টা করুন।', 'error')
-    finally:
-        d.close()
-    return redirect(url_for('admin_students', status=request.args.get('status', 'pending')))
-
-
-@app.route('/admin/students/<int:sid>/reject', methods=['POST'])
-@admin_required
-def admin_student_reject(sid):
-    d = db()
-    try:
-        student_row = d.fetchone('SELECT id FROM students WHERE id=?', (sid,))
-        if not student_row:
-            flash('শিক্ষার্থী পাওয়া যায়নি।', 'error')
-        else:
-            d.execute("UPDATE students SET registration_status='rejected',updated_at=? WHERE id=?", (datetime.utcnow().isoformat(), sid))
-            d.commit(); flash('নিবন্ধন প্রত্যাখ্যান করা হয়েছে। প্রয়োজনে পরে আবার অনুমোদন দিতে পারবেন।', 'ok')
-    except Exception:
-        d.rollback(); flash('নিবন্ধন প্রত্যাখ্যান করা যায়নি।', 'error')
-    finally:
-        d.close()
-    return redirect(url_for('admin_students', status=request.args.get('status', 'pending')))
 
 
 @app.route('/admin/students/<int:sid>/edit', methods=['GET','POST'])
@@ -1838,8 +1551,8 @@ def admin_question_import_template():
     ws.freeze_panes='A2'; ws.auto_filter.ref='A1:P1'
     widths=[12,20,28,30,40,16,14,50,24,24,24,24,18,42,14,10]
     for i,w in enumerate(widths,1): ws.column_dimensions[chr(64+i)].width=w
-    dv1=DataValidation(type='list',formula1='"Yes,No"',allow_blank=True); ws.add_data_validation(dv1); dv1.add('F2:F120001')
-    dv2=DataValidation(type='list',formula1='"easy,medium,hard"',allow_blank=True); ws.add_data_validation(dv2); dv2.add('O2:O120001')
+    dv1=DataValidation(type='list',formula1='"Yes,No"',allow_blank=True); ws.add_data_validation(dv1); dv1.add('F2:F12001')
+    dv2=DataValidation(type='list',formula1='"easy,medium,hard"',allow_blank=True); ws.add_data_validation(dv2); dv2.add('O2:O12001')
     ex=wb.create_sheet('Examples'); ex.append(BULK_HEADERS)
     for row in [
         ['1','গণিত','সংখ্যা পরিচিতি','প্রাথমিক গণিত অনুশীলন','শ্রেণি ১ নমুনা Quiz','Yes','10','২ + ৩ = কত?','৪','৫','৬','৭','B','যোগফল ৫।','easy','1'],
@@ -1850,7 +1563,7 @@ def admin_question_import_template():
     for i,w in enumerate(widths,1): ex.column_dimensions[chr(64+i)].width=w
     info=wb.create_sheet('Instructions')
     for row in [
-        ['Bulk Question Import — v5.2'],
+        ['Bulk Question Import — v5.0'],
         ['কোন sheet upload করবেন?','Questions sheet। Examples sheet শুধু format বোঝার জন্য।'],
         ['আবশ্যক কলাম','Class, Subject, Chapter, Question, Option A, Option B, Option C, Option D, Correct Answer'],
         ['Class','1–12; যেমন 1, 6, 12, Class 9, Grade 10, শ্রেণি ১২।'],
@@ -1860,7 +1573,7 @@ def admin_question_import_template():
         ['Quiz Title','দিলে সংশ্লিষ্ট Class + Subject + Chapter-এর Quiz তৈরি/পুনঃব্যবহার হবে।'],
         ['Quiz Published','Yes/No, True/False বা 1/0।'],
         ['Time Limit','মিনিটে; 0 মানে no limit।'],
-        ['Capacity','প্রতি Class-এ সর্বোচ্চ 10000 প্রশ্ন; 1–12 Class মিলিয়ে configured capacity 120000।'],
+        ['Capacity','প্রতি Class-এ সর্বোচ্চ 1000 প্রশ্ন; 1–12 Class মিলিয়ে configured capacity 12000।'],
         ['Preview','Preview data database-এ রাখা হয়; 60 মিনিটের মধ্যে Confirm করা যায়, server restart হলেও।'],
         ['CSV','UTF-8 with BOM ব্যবহার করুন।'],
     ]: info.append(row)
